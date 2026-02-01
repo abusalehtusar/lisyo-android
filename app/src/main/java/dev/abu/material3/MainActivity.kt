@@ -63,14 +63,14 @@ fun HomeScreen() {
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .padding(end = 8.dp)
-                    .size(22.dp)
+                    .size(44.dp)
             )
             Text(
                 text = "Lisyo",
                 fontFamily = jetbrainsMono,
                 style = MaterialTheme.typography.headlineMedium,
-                fontSize = 18.sp,
-                lineHeight = 22.sp,
+                fontSize = 36.sp,
+                lineHeight = 40.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
