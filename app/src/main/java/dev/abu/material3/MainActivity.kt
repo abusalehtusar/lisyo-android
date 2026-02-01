@@ -6,10 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material3.Icon
@@ -21,7 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.abu.material3.ui.theme.LisyoTheme
 
 class MainActivity : ComponentActivity() {
@@ -58,12 +59,17 @@ fun HomeScreen() {
                 imageVector = Icons.Default.GraphicEq,
                 contentDescription = "App Icon",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(end = 8.dp)
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .size(72.dp)
             )
             Text(
                 text = "Lisyo",
                 fontFamily = jetbrainsMono,
                 style = MaterialTheme.typography.headlineMedium,
+                fontSize = 56.sp,
+                lineHeight = 60.sp,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
