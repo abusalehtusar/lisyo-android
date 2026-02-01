@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -52,7 +53,7 @@ fun HomeScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.size(20.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -62,14 +63,14 @@ fun HomeScreen() {
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .padding(end = 8.dp)
-                    .size(72.dp)
+                    .size(22.dp)
             )
             Text(
                 text = "Lisyo",
                 fontFamily = jetbrainsMono,
                 style = MaterialTheme.typography.headlineMedium,
-                fontSize = 56.sp,
-                lineHeight = 60.sp,
+                fontSize = 18.sp,
+                lineHeight = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
