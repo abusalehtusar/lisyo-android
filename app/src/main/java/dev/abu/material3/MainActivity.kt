@@ -52,6 +52,7 @@ fun HomeScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        Spacer(modifier = Modifier.size(24.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
