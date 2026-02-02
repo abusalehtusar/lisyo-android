@@ -38,10 +38,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import dev.abu.material3.ui.theme.LisyoTheme
 import dev.abu.material3.ui.theme.OceanDark
 import dev.abu.material3.ui.theme.OceanPrimary
 import dev.abu.material3.ui.theme.OceanSecondary
+import dev.abu.material3.ui.theme.DeepBlue
+import dev.abu.material3.ui.theme.SoftWhite
+import dev.abu.material3.ui.theme.BorderLight
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,7 +108,7 @@ fun MainScreen() {
             )
             Text(
                 text = "Lisyo",
-                fontFamily = inter,
+                fontFamily = jetbrainsMono,
                 style = MaterialTheme.typography.headlineSmall,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
@@ -121,29 +125,29 @@ fun MainScreen() {
                     RoundedCornerShape(50)
                 } else {
                     when (index) {
-                        0 -> RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 8.dp, bottomEnd = 8.dp)
-                        options.size - 1 -> RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 50.dp, bottomEnd = 50.dp)
-                        else -> RoundedCornerShape(8.dp)
+                        0 -> RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 4.dp, bottomEnd = 4.dp)
+                        options.size - 1 -> RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+                        else -> RoundedCornerShape(4.dp)
                     }
                 }
                 
                 SegmentedButton(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 3.dp),
+                        .padding(horizontal = 2.dp),
                     shape = shape,
                     onClick = { selectedIndex = index },
                     selected = isSelected,
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = OceanPrimary,
-                        activeContentColor = OceanDark,
-                        inactiveContainerColor = OceanSecondary,
+                        activeContainerColor = DeepBlue,
+                        activeContentColor = Color.White,
+                        inactiveContainerColor = SoftWhite,
                         inactiveContentColor = OceanDark,
-                        activeBorderColor = OceanPrimary,
-                        inactiveBorderColor = OceanSecondary
+                        activeBorderColor = DeepBlue,
+                        inactiveBorderColor = BorderLight
                     ),
                     border = SegmentedButtonDefaults.borderStroke(
-                        color = if (isSelected) OceanPrimary else OceanSecondary,
+                        color = if (isSelected) DeepBlue else BorderLight,
                         width = 1.dp
                     ),
                     label = {
@@ -155,7 +159,7 @@ fun MainScreen() {
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(4.dp))
                             Text(
                                 text = label,
                                 fontFamily = inter,
