@@ -13,43 +13,76 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.abu.material3.data.api.SocketManager
 import dev.abu.material3.ui.theme.inter
 import dev.abu.material3.ui.theme.jetbrainsMono
+import kotlinx.coroutines.launch
 
 @Composable
-fun JoinScreen(onJoin: (String) -> Unit) {
+fun JoinScreen(onJoin: (String, String) -> Unit) {
     var roomCode by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    var isGenerating by remember { mutableStateOf(true) }
+    var isJoining by remember { mutableStateOf(false) }
+    
+    val scope = rememberCoroutineScope()
 
     val historyItems = listOf(
-        Pair("Lofi Chill", "2h ago"),
-        Pair("Techno Bunker", "Yesterday"),
-        Pair("Jazz Club", "3 days ago")
+        Pair("123456", "2h ago"),
+        Pair("789012", "Yesterday"),
+        Pair("345678", "3 days ago")
     )
+    
+    // Generate random username on first load
+    LaunchedEffect(Unit) {
+        isGenerating = true
+        val (_, generatedUsername) = SocketManager.generateNames()
+        username = generatedUsername
+        isGenerating = false
+    }
+    
+    fun regenerateUsername() {
+        scope.launch {
+            isGenerating = true
+            val (_, generatedUsername) = SocketManager.generateNames()
+            username = generatedUsername
+            isGenerating = false
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -88,10 +121,48 @@ fun JoinScreen(onJoin: (String) -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.size(24.dp))
+                
+                // Username Input
+                Text(
+                    text = "Identity",
+                    fontFamily = jetbrainsMono,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Your Alias", fontFamily = inter) },
+                    placeholder = { Text("e.g. Cool-Panda", fontFamily = inter) },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    trailingIcon = {
+                        if (isGenerating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            IconButton(onClick = { regenerateUsername() }) {
+                                Icon(Icons.Default.Refresh, contentDescription = "Randomize")
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    )
+                )
+
+                Spacer(modifier = Modifier.size(24.dp))
 
                 // Room Code Input
                 Text(
-                    text = "Access",
+                    text = "Room Code",
                     fontFamily = jetbrainsMono,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.tertiary,
@@ -100,9 +171,15 @@ fun JoinScreen(onJoin: (String) -> Unit) {
 
                 OutlinedTextField(
                     value = roomCode,
-                    onValueChange = { roomCode = it },
-                    label = { Text("Room Code / Link", fontFamily = inter) },
-                    placeholder = { Text("Paste code here", fontFamily = inter) },
+                    onValueChange = { 
+                        // Only allow digits and max 6 characters
+                        if (it.length <= 6 && it.all { c -> c.isDigit() }) {
+                            roomCode = it
+                        }
+                    },
+                    label = { Text("6-Digit Code", fontFamily = inter) },
+                    placeholder = { Text("e.g. 123456", fontFamily = inter) },
+                    leadingIcon = { Icon(Icons.Default.Numbers, contentDescription = null) },
                     trailingIcon = {
                         IconButton(onClick = { /* Scan QR Action */ }) {
                             Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR")
@@ -111,7 +188,8 @@ fun JoinScreen(onJoin: (String) -> Unit) {
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     )
@@ -122,20 +200,32 @@ fun JoinScreen(onJoin: (String) -> Unit) {
                 // Action Button
                 Button(
                     onClick = { 
-                        dev.abu.material3.data.api.SocketManager.establishConnection()
-                        onJoin(if (roomCode.isNotEmpty()) roomCode else "Unknown Room")
+                        if (roomCode.length == 6 && username.isNotBlank()) {
+                            isJoining = true
+                            SocketManager.establishConnection()
+                            onJoin(roomCode, username)
+                        }
                     },
+                    enabled = roomCode.length == 6 && username.isNotBlank() && !isJoining,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(50)
                 ) {
-                    Text(
-                        text = "Connect",
-                        fontFamily = inter,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    )
+                    if (isJoining) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Connect",
+                            fontFamily = inter,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }
@@ -170,7 +260,7 @@ fun JoinScreen(onJoin: (String) -> Unit) {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow // Slightly lighter/darker
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -182,8 +272,7 @@ fun JoinScreen(onJoin: (String) -> Unit) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { 
-                                dev.abu.material3.data.api.SocketManager.establishConnection()
-                                onJoin(item.first) 
+                                roomCode = item.first
                             }
                             .padding(vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -193,7 +282,8 @@ fun JoinScreen(onJoin: (String) -> Unit) {
                             text = item.first,
                             fontFamily = jetbrainsMono,
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            letterSpacing = 2.sp
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(

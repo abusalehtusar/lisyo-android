@@ -37,15 +37,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.abu.material3.ui.screens.CreateScreen
 import dev.abu.material3.ui.screens.JoinScreen
+import dev.abu.material3.ui.screens.PlayerScreen
 import dev.abu.material3.ui.screens.PublicScreen
 import dev.abu.material3.ui.theme.inter
 import dev.abu.material3.ui.theme.jetbrainsMono
+
+data class RoomSession(
+    val roomId: String,
+    val username: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     var selectedIndex by remember { mutableIntStateOf(0) }
-    var activeRoomName by remember { mutableStateOf<String?>(null) }
+    var activeSession by remember { mutableStateOf<RoomSession?>(null) }
     
     val options = listOf("Public", "Create", "Join")
     val icons = listOf(
@@ -54,10 +60,11 @@ fun MainScreen() {
         Icons.AutoMirrored.Filled.Login
     )
 
-    if (activeRoomName != null) {
-        dev.abu.material3.ui.screens.PlayerScreen(
-            roomName = activeRoomName!!,
-            onLeave = { activeRoomName = null }
+    if (activeSession != null) {
+        PlayerScreen(
+            roomId = activeSession!!.roomId,
+            username = activeSession!!.username,
+            onLeave = { activeSession = null }
         )
     } else {
         Column(
@@ -66,7 +73,7 @@ fun MainScreen() {
                 .statusBarsPadding()
                 .padding(horizontal = 16.dp)
         ) {
-            Spacer(modifier = Modifier.size(20.dp)) // Set to 20dp spacing from status bar
+            Spacer(modifier = Modifier.size(20.dp))
             
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -115,7 +122,7 @@ fun MainScreen() {
                         colors = SegmentedButtonDefaults.colors(
                             activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainer, // Use surfaceContainer for better contrast than pure surface
+                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                             inactiveContentColor = MaterialTheme.colorScheme.onSurface,
                             activeBorderColor = Color.Transparent,
                             inactiveBorderColor = Color.Transparent
@@ -156,9 +163,15 @@ fun MainScreen() {
                 contentAlignment = Alignment.Center
             ) {
                 when (selectedIndex) {
-                    0 -> PublicScreen(onJoin = { activeRoomName = it })
-                    1 -> CreateScreen(onJoin = { activeRoomName = it })
-                    2 -> JoinScreen(onJoin = { activeRoomName = it })
+                    0 -> PublicScreen(onJoin = { roomId, username -> 
+                        activeSession = RoomSession(roomId, username)
+                    })
+                    1 -> CreateScreen(onJoin = { roomId, username -> 
+                        activeSession = RoomSession(roomId, username)
+                    })
+                    2 -> JoinScreen(onJoin = { roomId, username -> 
+                        activeSession = RoomSession(roomId, username)
+                    })
                 }
             }
         }

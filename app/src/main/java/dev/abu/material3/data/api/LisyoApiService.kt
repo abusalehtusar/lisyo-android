@@ -1,7 +1,9 @@
 package dev.abu.material3.data.api
 
-import dev.abu.material3.data.model.Song
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface LisyoApiService {
@@ -10,6 +12,15 @@ interface LisyoApiService {
 
     @GET("/api/rooms")
     suspend fun getRooms(): List<RoomResponse>
+    
+    @GET("/api/stream/{videoId}")
+    suspend fun getStreamUrl(@Path("videoId") videoId: String): StreamResponse
+    
+    @GET("/api/generate-names")
+    suspend fun generateNames(): GenerateNamesResponse
+    
+    @POST("/api/rooms")
+    suspend fun createRoom(@Body request: CreateRoomRequest): CreateRoomResponse
 }
 
 data class SearchResponse(
@@ -21,7 +32,7 @@ data class SearchResultItem(
     val name: String,
     val artist: ArtistObj?,
     val videoId: String,
-    val duration: Long?, // might be in seconds or formatted string, need to check API
+    val duration: Long?,
     val thumbnails: List<ThumbnailObj>?
 )
 
@@ -34,5 +45,35 @@ data class RoomResponse(
     val userCount: Int,
     val isPlaying: Boolean,
     val vibe: String = "Chill",
-    val countryFlag: String = "🇺🇳"
+    val countryFlag: String = "🇺🇳",
+    val currentSong: CurrentSongResponse? = null
+)
+
+data class CurrentSongResponse(
+    val title: String,
+    val artist: String
+)
+
+data class StreamResponse(
+    val url: String,
+    val duration: Long = 0
+)
+
+data class GenerateNamesResponse(
+    val roomName: String,
+    val username: String
+)
+
+data class CreateRoomRequest(
+    val name: String,
+    val vibe: String,
+    val isPrivate: Boolean,
+    val hostUsername: String
+)
+
+data class CreateRoomResponse(
+    val roomId: String,
+    val name: String,
+    val vibe: String,
+    val isPrivate: Boolean
 )

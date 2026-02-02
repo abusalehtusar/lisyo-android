@@ -2,7 +2,6 @@ package dev.abu.material3.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,43 +27,63 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.abu.material3.data.api.SocketManager
 import dev.abu.material3.ui.theme.inter
 import dev.abu.material3.ui.theme.jetbrainsMono
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun CreateScreen(onJoin: (String) -> Unit) {
+fun CreateScreen(onJoin: (String, String) -> Unit) {
     var username by remember { mutableStateOf("") }
     var roomName by remember { mutableStateOf("") }
     var selectedGenre by remember { mutableStateOf("Lofi") }
     var isPrivate by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var isGenerating by remember { mutableStateOf(true) }
     
+    val scope = rememberCoroutineScope()
     val genres = listOf("Lofi", "Pop", "Jazz", "Rock", "Techno", "K-Pop", "Classical")
 
-    fun generateRandomUsername() {
-        val adj = listOf("Cool", "Happy", "Lazy", "Silent", "Neon", "Cyber", "Retro")
-        val noun = listOf("Cat", "Fox", "Panda", "User", "Ghost", "Surfer", "Pilot")
-        username = "${adj.random()}${noun.random()}${ (10..99).random() }"
+    // Generate random names on first load
+    LaunchedEffect(Unit) {
+        isGenerating = true
+        val (generatedRoom, generatedUsername) = SocketManager.generateNames()
+        roomName = generatedRoom
+        username = generatedUsername
+        isGenerating = false
+    }
+
+    fun regenerateNames() {
+        scope.launch {
+            isGenerating = true
+            val (generatedRoom, generatedUsername) = SocketManager.generateNames()
+            roomName = generatedRoom
+            username = generatedUsername
+            isGenerating = false
+        }
     }
 
     Column(
@@ -117,17 +136,24 @@ fun CreateScreen(onJoin: (String) -> Unit) {
                     value = username,
                     onValueChange = { username = it },
                     label = { Text("Your Alias", fontFamily = inter) },
-                    placeholder = { Text("e.g. NeonGhost", fontFamily = inter) },
+                    placeholder = { Text("e.g. Cool-Panda", fontFamily = inter) },
                     leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                     trailingIcon = {
-                        IconButton(onClick = { generateRandomUsername() }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Randomize")
+                        if (isGenerating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            IconButton(onClick = { regenerateNames() }) {
+                                Icon(Icons.Default.Refresh, contentDescription = "Randomize")
+                            }
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     )
@@ -148,12 +174,24 @@ fun CreateScreen(onJoin: (String) -> Unit) {
                     value = roomName,
                     onValueChange = { roomName = it },
                     label = { Text("Room Name", fontFamily = inter) },
-                    placeholder = { Text("e.g. Chill Vibes Only", fontFamily = inter) },
+                    placeholder = { Text("e.g. Neon Vibes", fontFamily = inter) },
                     leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                    trailingIcon = {
+                        if (isGenerating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            IconButton(onClick = { regenerateNames() }) {
+                                Icon(Icons.Default.Refresh, contentDescription = "Randomize")
+                            }
+                        }
+                    },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     )
@@ -248,26 +286,49 @@ fun CreateScreen(onJoin: (String) -> Unit) {
                 // Action Button
                 Button(
                     onClick = { 
-                        dev.abu.material3.data.api.SocketManager.establishConnection()
-                        onJoin(if (roomName.isNotEmpty()) roomName else "My Room")
+                        if (username.isNotBlank()) {
+                            isLoading = true
+                            scope.launch {
+                                val roomId = SocketManager.createRoom(
+                                    name = roomName.ifBlank { "My Room" },
+                                    vibe = selectedGenre,
+                                    isPrivate = isPrivate,
+                                    hostUsername = username
+                                )
+                                isLoading = false
+                                if (roomId != null) {
+                                    SocketManager.establishConnection()
+                                    onJoin(roomId, username)
+                                }
+                            }
+                        }
                     },
+                    enabled = username.isNotBlank() && !isLoading,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(50)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Start Listening",
-                        fontFamily = inter,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Start Listening",
+                            fontFamily = inter,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }

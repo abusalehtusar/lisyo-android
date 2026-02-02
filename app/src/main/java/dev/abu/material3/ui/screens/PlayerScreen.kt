@@ -15,12 +15,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Group
@@ -29,17 +33,23 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -47,7 +57,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,6 +70,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.abu.material3.data.api.SocketManager
@@ -65,25 +78,29 @@ import dev.abu.material3.data.model.ChatMessage
 import dev.abu.material3.data.model.Song
 import dev.abu.material3.ui.theme.inter
 import dev.abu.material3.ui.theme.jetbrainsMono
-import java.util.UUID
+import kotlinx.coroutines.delay
 
 @Composable
 fun PlayerScreen(
-    roomName: String,
+    roomId: String,
+    username: String,
     onLeave: () -> Unit
 ) {
     val playerState by SocketManager.playerState.collectAsState()
     val queue by SocketManager.queue.collectAsState()
     val messages by SocketManager.messages.collectAsState()
     val users by SocketManager.users.collectAsState()
+    val shuffleEnabled by SocketManager.shuffleEnabled.collectAsState()
+    val repeatMode by SocketManager.repeatMode.collectAsState()
+    val isLoadingStream by SocketManager.isLoadingStream.collectAsState()
     
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Songs", "Chat", "Session")
     val icons = listOf(Icons.Default.MusicNote, Icons.Default.Chat, Icons.Default.Group)
 
-    LaunchedEffect(roomName) {
+    LaunchedEffect(roomId, username) {
         SocketManager.establishConnection()
-        SocketManager.joinRoom(roomName, "User-${(100..999).random()}") // Random username for now
+        SocketManager.joinRoom(roomId, username)
     }
 
     Scaffold(
@@ -103,13 +120,22 @@ fun PlayerScreen(
                     IconButton(onClick = onLeave) {
                         Icon(Icons.Default.KeyboardArrowDown, "Leave")
                     }
-                    Text(
-                        text = roomName,
-                        fontFamily = jetbrainsMono,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.size(48.dp)) // Balance
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = roomId,
+                            fontFamily = jetbrainsMono,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (isLoadingStream) {
+                            Text(
+                                text = "Loading stream...",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Spacer(Modifier.size(48.dp))
                 }
                 TabRow(selectedTabIndex = selectedTab) {
                     tabs.forEachIndexed { index, title ->
@@ -126,32 +152,42 @@ fun PlayerScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             when (selectedTab) {
-                0 -> SongsTab(playerState.isPlaying, playerState.currentSong, queue)
-                1 -> ChatTab(messages)
-                2 -> SessionTab(users, roomName)
+                0 -> SongsTab(
+                    isPlaying = playerState.isPlaying,
+                    currentSong = playerState.currentSong,
+                    queue = queue,
+                    shuffleEnabled = shuffleEnabled,
+                    repeatMode = repeatMode
+                )
+                1 -> ChatTab(messages = messages, username = username)
+                2 -> SessionTab(users = users, roomId = roomId)
             }
         }
     }
 }
 
 @Composable
-fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
+fun SongsTab(
+    isPlaying: Boolean,
+    currentSong: Song?,
+    queue: List<Song>,
+    shuffleEnabled: Boolean,
+    repeatMode: String
+) {
     var searchQuery by remember { mutableStateOf("") }
-    var currentProgress by remember { mutableStateOf(0L) }
+    var currentProgress by remember { mutableLongStateOf(0L) }
+    var isSeeking by remember { mutableStateOf(false) }
+    var seekPosition by remember { mutableFloatStateOf(0f) }
     val searchResults by SocketManager.searchResults.collectAsState()
+    val isSearching by SocketManager.isSearching.collectAsState()
     
-    // Local timer to update progress bar smoothly
+    // Update progress every 500ms
     LaunchedEffect(isPlaying, currentSong) {
-        if (isPlaying && currentSong != null) {
-            val startTime = System.currentTimeMillis()
-            val startPos = SocketManager.getCurrentPosition()
-            while (true) {
-                val elapsed = System.currentTimeMillis() - startTime
-                currentProgress = startPos + elapsed
-                kotlinx.coroutines.delay(1000) // Update every second
+        while (true) {
+            if (!isSeeking) {
+                currentProgress = SocketManager.getCurrentPosition()
             }
-        } else if (!isPlaying) {
-             currentProgress = SocketManager.getCurrentPosition()
+            delay(500)
         }
     }
 
@@ -162,15 +198,24 @@ fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
             onValueChange = { 
                 searchQuery = it 
                 if (it.length > 2) {
-                     SocketManager.search(it)
+                    SocketManager.search(it)
                 } else if (it.isEmpty()) {
-                     // Clear results if needed
+                    SocketManager.clearSearchResults()
                 }
             },
             placeholder = { Text("Search songs...", fontFamily = inter) },
             leadingIcon = { Icon(Icons.Default.Search, null) },
+            trailingIcon = {
+                if (isSearching) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true
         )
         
         Spacer(Modifier.height(16.dp))
@@ -184,31 +229,77 @@ fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(searchResults) { song ->
-                    SongItem(song, onClick = { 
-                        SocketManager.playSong(song)
-                        searchQuery = "" // Clear search after playing
-                    })
+                    SongItem(
+                        song = song,
+                        onPlay = { 
+                            SocketManager.playSong(song)
+                            searchQuery = ""
+                            SocketManager.clearSearchResults()
+                        },
+                        onAddToQueue = {
+                            SocketManager.addToQueue(song)
+                        }
+                    )
+                }
+                if (searchResults.isEmpty() && !isSearching && searchQuery.length > 2) {
+                    item {
+                        Text(
+                            "No results found",
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            fontFamily = inter,
+                            color = MaterialTheme.colorScheme.outline,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         } else {
-             Text("Queue", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-             Spacer(Modifier.height(8.dp))
-             // Queue
-             LazyColumn(
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Queue", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text("${queue.size} songs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            }
+            Spacer(Modifier.height(8.dp))
+            LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(queue) { song ->
-                    SongItem(song, onClick = { /* Maybe remove or vote skip? */ })
+                items(queue.size) { index ->
+                    val song = queue[index]
+                    QueueItem(
+                        song = song,
+                        index = index,
+                        onRemove = { SocketManager.removeFromQueue(index) }
+                    )
                 }
                 if (queue.isEmpty()) {
                     item {
-                        Text(
-                            "Queue is empty",
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            fontFamily = jetbrainsMono,
-                            color = MaterialTheme.colorScheme.outline
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.QueueMusic,
+                                null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.outline
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Queue is empty",
+                                fontFamily = jetbrainsMono,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                "Search and add songs!",
+                                fontFamily = inter,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
                 }
             }
@@ -224,44 +315,117 @@ fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
                     text = currentSong?.title ?: "No Song Playing",
                     fontFamily = jetbrainsMono,
                     fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1
                 )
                 Text(
                     text = currentSong?.artist ?: "Unknown Artist",
                     fontFamily = inter,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1
                 )
                 
                 Spacer(Modifier.height(12.dp))
                 
                 val duration = currentSong?.duration ?: 1L
-                val progressFraction = (currentProgress.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                val progressFraction = if (isSeeking) {
+                    seekPosition
+                } else {
+                    (currentProgress.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                }
                 
-                LinearProgressIndicator(
-                    progress = { progressFraction },
-                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                // Seekable Progress Slider
+                Slider(
+                    value = progressFraction,
+                    onValueChange = { 
+                        isSeeking = true
+                        seekPosition = it
+                    },
+                    onValueChangeFinished = {
+                        val newPosition = (seekPosition * duration).toLong()
+                        SocketManager.seekTo(newPosition)
+                        currentProgress = newPosition
+                        isSeeking = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary
+                    )
                 )
                 
+                // Time labels
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        formatDuration(if (isSeeking) (seekPosition * duration).toLong() else currentProgress),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = jetbrainsMono
+                    )
+                    Text(
+                        formatDuration(duration),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = jetbrainsMono
+                    )
+                }
+                
+                // Control buttons
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { SocketManager.previous() }) {
-                        Icon(Icons.Default.SkipPrevious, "Prev")
+                    // Shuffle
+                    IconButton(
+                        onClick = { SocketManager.toggleShuffle() },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = if (shuffleEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
+                        Icon(Icons.Default.Shuffle, "Shuffle")
                     }
+                    
+                    // Previous
+                    IconButton(onClick = { SocketManager.previous() }) {
+                        Icon(Icons.Default.SkipPrevious, "Previous")
+                    }
+                    
+                    // Play/Pause
                     IconButton(
                         onClick = { if (isPlaying) SocketManager.pause() else SocketManager.resume() },
-                        modifier = Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
                     ) {
                         Icon(
                             if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             "Play/Pause",
-                            tint = MaterialTheme.colorScheme.onPrimary
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(32.dp)
                         )
                     }
+                    
+                    // Next
                     IconButton(onClick = { SocketManager.next() }) {
                         Icon(Icons.Default.SkipNext, "Next")
+                    }
+                    
+                    // Repeat
+                    IconButton(
+                        onClick = { SocketManager.cycleRepeatMode() },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = if (repeatMode != "off") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
+                        Icon(
+                            when (repeatMode) {
+                                "one" -> Icons.Default.RepeatOne
+                                else -> Icons.Default.Repeat
+                            },
+                            "Repeat: $repeatMode"
+                        )
                     }
                 }
             }
@@ -269,72 +433,161 @@ fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
     }
 }
 
+private fun formatDuration(ms: Long): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%d:%02d".format(minutes, seconds)
+}
+
 @Composable
-fun SongItem(song: Song, onClick: () -> Unit) {
+fun SongItem(song: Song, onPlay: () -> Unit, onAddToQueue: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .clickable(onClick = onPlay)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Default.MusicNote, null, tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.width(12.dp))
-        Column {
-            Text(song.title, fontFamily = jetbrainsMono, fontWeight = FontWeight.SemiBold)
-            Text(song.artist, fontFamily = inter, style = MaterialTheme.typography.bodySmall)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(song.title, fontFamily = jetbrainsMono, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(song.artist, fontFamily = inter, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        }
+        IconButton(onClick = onAddToQueue) {
+            Icon(Icons.Default.Add, "Add to queue", tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
 
 @Composable
-fun ChatTab(messages: List<ChatMessage>) {
+fun QueueItem(song: Song, index: Int, onRemove: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            "${index + 1}",
+            fontFamily = jetbrainsMono,
+            color = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.width(24.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(song.title, fontFamily = jetbrainsMono, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(song.artist, fontFamily = inter, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+fun ChatTab(messages: List<ChatMessage>, username: String) {
     var text by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    
+    // Auto-scroll to bottom when new message arrives
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(0)
+        }
+    }
     
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.weight(1f).padding(16.dp),
+            state = listState,
+            modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            reverseLayout = true
+            reverseLayout = true,
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(messages.reversed()) { msg ->
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        Text(msg.senderName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                        Text(msg.text, fontFamily = inter)
-                    }
-                }
+                val isMe = msg.senderName == username
+                ChatBubble(message = msg, isMe = isMe)
             }
         }
         
-        Row(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Say something...") },
-                shape = RoundedCornerShape(24.dp)
+                placeholder = { Text("Say something...", fontFamily = inter) },
+                shape = RoundedCornerShape(24.dp),
+                singleLine = true
             )
-            IconButton(onClick = { 
-                if (text.isNotBlank()) {
-                    SocketManager.sendMessage(text, "Me")
-                    text = ""
-                }
-            }) {
-                Icon(Icons.AutoMirrored.Filled.Send, "Send")
+            Spacer(Modifier.width(8.dp))
+            IconButton(
+                onClick = { 
+                    if (text.isNotBlank()) {
+                        SocketManager.sendMessage(text, username)
+                        text = ""
+                    }
+                },
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    "Send",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
     }
 }
 
 @Composable
-fun SessionTab(users: List<dev.abu.material3.data.model.SessionUser>, roomName: String) {
+fun ChatBubble(message: ChatMessage, isMe: Boolean) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
+    ) {
+        // Username label above bubble
+        Text(
+            text = message.senderName,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontFamily = jetbrainsMono,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+        )
+        
+        // Message bubble
+        Box(
+            modifier = Modifier
+                .widthIn(max = 280.dp)
+                .background(
+                    color = if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(
+                        topStart = 16.dp,
+                        topEnd = 16.dp,
+                        bottomStart = if (isMe) 16.dp else 4.dp,
+                        bottomEnd = if (isMe) 4.dp else 16.dp
+                    )
+                )
+                .padding(horizontal = 14.dp, vertical = 10.dp)
+        ) {
+            Text(
+                text = message.text,
+                fontFamily = inter,
+                color = if (isMe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun SessionTab(users: List<dev.abu.material3.data.model.SessionUser>, roomId: String) {
     val clipboardManager = LocalClipboardManager.current
     
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -350,10 +603,17 @@ fun SessionTab(users: List<dev.abu.material3.data.model.SessionUser>, roomName: 
             ) {
                 Column {
                     Text("Room ID", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                    Text(roomName, fontFamily = jetbrainsMono, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                    Text(
+                        roomId,
+                        fontFamily = jetbrainsMono,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        letterSpacing = 4.sp
+                    )
                 }
                 IconButton(onClick = { 
-                    clipboardManager.setText(AnnotatedString(roomName)) 
+                    clipboardManager.setText(AnnotatedString(roomId)) 
                 }) {
                     Icon(Icons.Default.ContentCopy, "Copy ID", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                 }
@@ -365,15 +625,36 @@ fun SessionTab(users: List<dev.abu.material3.data.model.SessionUser>, roomName: 
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(users) { user ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(12.dp))
+                        .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            user.username.firstOrNull()?.uppercase() ?: "?",
+                            fontFamily = jetbrainsMono,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                     Spacer(Modifier.width(12.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(user.username, fontFamily = jetbrainsMono, fontWeight = FontWeight.Bold)
                         if (user.isHost) {
-                            Text("HOST", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                            Text(
+                                "HOST",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                fontFamily = jetbrainsMono
+                            )
                         }
                     }
                 }
