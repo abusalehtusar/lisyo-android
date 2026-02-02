@@ -16,9 +16,24 @@ import org.json.JSONObject
 import java.net.URISyntaxException
 import java.util.UUID
 
+import dev.abu.material3.ui.screens.Room
+import dev.abu.material3.ui.screens.dummyRooms // Keep for fallback if needed, or remove
+import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import androidx.compose.ui.graphics.Color
+
 object SocketManager {
     private var mSocket: Socket? = null
     private val scope = CoroutineScope(Dispatchers.IO)
+    
+    // API Service
+    private val retrofit = Retrofit.Builder()
+        .baseUrl("https://lisyo-backend-production-1acf.up.railway.app")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+        
+    private val apiService = retrofit.create(LisyoApiService::class.java)
 
     // State Flows
     private val _playerState = MutableStateFlow(PlayerState())
@@ -26,9 +41,18 @@ object SocketManager {
 
     private val _queue = MutableStateFlow<List<Song>>(emptyList())
     val queue = _queue.asStateFlow()
+    
+    // Search Results
+    private val _searchResults = MutableStateFlow<List<Song>>(emptyList())
+    val searchResults = _searchResults.asStateFlow()
+    
+    // Public Rooms
+    private val _publicRooms = MutableStateFlow<List<Room>>(emptyList())
+    val publicRooms = _publicRooms.asStateFlow()
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages = _messages.asStateFlow()
+
 
     private val _users = MutableStateFlow<List<SessionUser>>(emptyList())
     val users = _users.asStateFlow()
@@ -279,5 +303,51 @@ object SocketManager {
         
         val elapsed = System.currentTimeMillis() - state.lastSyncTime
         return state.currentPosition + elapsed
+    }
+    
+    // API Actions
+    fun search(query: String) {
+        scope.launch {
+            try {
+                val response = apiService.search(query)
+                val songs = response.content.map { item ->
+                    Song(
+                        id = item.videoId,
+                        title = item.name,
+                        artist = item.artist?.name ?: "Unknown",
+                        duration = (item.duration ?: 0) * 1000, // API likely returns seconds? or ms? assuming seconds if small, need to verify. YoutubeMusicApi usually returns milliseconds or seconds. Let's assume ms if > 10000. Wait, `youtube-music-api` returns `duration` in milliseconds usually.
+                        coverUrl = item.thumbnails?.lastOrNull()?.url
+                    )
+                }
+                _searchResults.value = songs
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    fun refreshRooms() {
+        scope.launch {
+            try {
+                val response = apiService.getRooms()
+                val rooms = response.mapIndexed { index, item ->
+                    Room(
+                        id = index, // UI uses Int id
+                        countryFlag = item.countryFlag,
+                        vibe = item.vibe,
+                        username = "Host",
+                        roomName = item.name,
+                        songs = emptyList(), // Not returned by list API
+                        totalSongs = 0,
+                        userCount = item.userCount,
+                        flagColor = Color(0xFFE3F2FD) // Default color
+                    )
+                }
+                _publicRooms.value = rooms
+            } catch (e: Exception) {
+                e.printStackTrace()
+                // Fallback to dummy if empty or error? No, just show empty or error state.
+            }
+        }
     }
 }

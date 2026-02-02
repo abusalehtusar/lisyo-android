@@ -1,6 +1,7 @@
 package dev.abu.material3.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -134,6 +135,7 @@ fun PlayerScreen(
 fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
     var searchQuery by remember { mutableStateOf("") }
     var currentProgress by remember { mutableStateOf(0L) }
+    val searchResults by SocketManager.searchResults.collectAsState()
     
     // Local timer to update progress bar smoothly
     LaunchedEffect(isPlaying, currentSong) {
@@ -154,7 +156,14 @@ fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
         // Search Bar
         OutlinedTextField(
             value = searchQuery,
-            onValueChange = { searchQuery = it },
+            onValueChange = { 
+                searchQuery = it 
+                if (it.length > 2) {
+                     SocketManager.search(it)
+                } else if (it.isEmpty()) {
+                     // Clear results if needed
+                }
+            },
             placeholder = { Text("Search songs...", fontFamily = inter) },
             leadingIcon = { Icon(Icons.Default.Search, null) },
             modifier = Modifier.fillMaxWidth(),
@@ -163,22 +172,41 @@ fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
         
         Spacer(Modifier.height(16.dp))
 
-        // Queue
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(queue) { song ->
-                SongItem(song)
+        // Content: Search Results OR Queue
+        if (searchQuery.isNotEmpty()) {
+            Text("Search Results", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(8.dp))
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(searchResults) { song ->
+                    SongItem(song, onClick = { 
+                        SocketManager.playSong(song)
+                        searchQuery = "" // Clear search after playing
+                    })
+                }
             }
-            if (queue.isEmpty()) {
-                item {
-                    Text(
-                        "Queue is empty",
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
-                        fontFamily = jetbrainsMono,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+        } else {
+             Text("Queue", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+             Spacer(Modifier.height(8.dp))
+             // Queue
+             LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(queue) { song ->
+                    SongItem(song, onClick = { /* Maybe remove or vote skip? */ })
+                }
+                if (queue.isEmpty()) {
+                    item {
+                        Text(
+                            "Queue is empty",
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            fontFamily = jetbrainsMono,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                 }
             }
         }
@@ -239,9 +267,13 @@ fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
 }
 
 @Composable
-fun SongItem(song: Song) {
+fun SongItem(song: Song, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp)).padding(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Default.MusicNote, null, tint = MaterialTheme.colorScheme.primary)

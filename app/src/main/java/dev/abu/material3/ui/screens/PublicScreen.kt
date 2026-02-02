@@ -38,6 +38,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -95,8 +97,17 @@ val dummyRooms = listOf(
     )
 )
 
+import androidx.compose.runtime.collectAsState
+import dev.abu.material3.data.api.SocketManager
+
 @Composable
 fun PublicScreen(onJoin: (String) -> Unit) {
+    val rooms by SocketManager.publicRooms.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        SocketManager.refreshRooms()
+    }
+
     LazyColumn(
         contentPadding = PaddingValues(
             top = 8.dp,
@@ -105,8 +116,16 @@ fun PublicScreen(onJoin: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        items(dummyRooms) { room ->
+        items(rooms) { room ->
             RoomCard(room, onJoin)
+        }
+        
+        if (rooms.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text("No active rooms found. Create one!", fontFamily = dev.abu.material3.ui.theme.inter, color = MaterialTheme.colorScheme.outline)
+                }
+            }
         }
     }
 }
