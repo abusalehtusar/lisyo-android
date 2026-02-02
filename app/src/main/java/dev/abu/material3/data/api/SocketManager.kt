@@ -397,6 +397,16 @@ object SocketManager {
         mSocket?.emit("queue:remove", index)
     }
 
+    suspend fun ping(): Boolean {
+        return try {
+            apiService.getRooms()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     private fun syncTime() {
         val t0 = System.currentTimeMillis()
         val data = JSONObject()

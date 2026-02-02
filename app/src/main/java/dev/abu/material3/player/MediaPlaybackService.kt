@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -36,6 +37,7 @@ class MediaPlaybackService : MediaSessionService() {
     private var player: ExoPlayer? = null
     
     companion object {
+        private const val TAG = "MediaPlaybackService"
         private const val NOTIFICATION_CHANNEL_ID = "lisyo_playback_channel"
         
         // Custom commands
@@ -46,6 +48,7 @@ class MediaPlaybackService : MediaSessionService() {
     
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "onCreate")
         createNotificationChannel()
         initializePlayer()
         initializeMediaSession()
@@ -83,9 +86,14 @@ class MediaPlaybackService : MediaSessionService() {
             .apply {
                 addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(playbackState: Int) {
+                        Log.d(TAG, "Playback state: $playbackState")
                         if (playbackState == Player.STATE_ENDED) {
                             SocketManager.next()
                         }
+                    }
+                    
+                    override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                        Log.e(TAG, "Player error: ${error.message}", error)
                     }
                 })
             }
@@ -98,20 +106,25 @@ class MediaPlaybackService : MediaSessionService() {
 
         return ResolvingDataSource.Factory(httpDataSourceFactory) { dataSpec ->
             val mediaId = dataSpec.uri.toString()
+            Log.d(TAG, "Resolving data source for: $mediaId")
             
             // If it's already a full URL (not just a videoId), return as is
             if (mediaId.startsWith("http") || mediaId.contains("://")) {
+                Log.d(TAG, "Direct URL detected, skipping resolution")
                 return@Factory dataSpec
             }
             
             // Resolve videoId to stream URL
             val resolvedUrl = runBlocking {
+                Log.d(TAG, "Fetching stream URL for: $mediaId")
                 getVideoStreamUrl(mediaId)
             }
             
             if (resolvedUrl != null) {
+                Log.d(TAG, "Resolved to: $resolvedUrl")
                 dataSpec.withUri(android.net.Uri.parse(resolvedUrl))
             } else {
+                Log.e(TAG, "Failed to resolve stream URL for: $mediaId")
                 dataSpec
             }
         }
@@ -127,11 +140,12 @@ class MediaPlaybackService : MediaSessionService() {
                 return response.url
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "API resolution failed for $videoId: ${e.message}")
         }
         
         // Fallback to direct Piped API call
         try {
+            Log.d(TAG, "Trying fallback for $videoId")
             val url = java.net.URL("https://pipedapi.kavin.rocks/streams/$videoId")
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
@@ -159,9 +173,11 @@ class MediaPlaybackService : MediaSessionService() {
                     }
                     if (bestUrl.isNotEmpty()) return bestUrl
                 }
+            } else {
+                Log.e(TAG, "Fallback failed: HTTP ${connection.responseCode}")
             }
         } catch (e2: Exception) {
-            e2.printStackTrace()
+            Log.e(TAG, "Fallback failed for $videoId: ${e2.message}")
         }
         
         return null
@@ -185,6 +201,7 @@ class MediaPlaybackService : MediaSessionService() {
     }
     
     override fun onDestroy() {
+        Log.d(TAG, "onDestroy")
         mediaSession?.run {
             player.release()
             release()
