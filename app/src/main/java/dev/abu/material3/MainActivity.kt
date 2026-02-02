@@ -18,11 +18,25 @@ import dev.abu.material3.data.api.SocketManager
 import dev.abu.material3.player.MediaPlaybackService
 import dev.abu.material3.ui.MainScreen
 import dev.abu.material3.ui.theme.LisyoTheme
+import dev.abu.material3.utils.Logger
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        
+        Logger.init(this)
+        Logger.logInfo(TAG, "App started, Logger initialized")
+        
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            Logger.logError(TAG, "Uncaught exception in thread ${thread.name}", throwable)
+            // Optionally, call the original handler to let the app crash normally
+            // Or just exit
+        }
         
         // Request notification permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -43,8 +57,9 @@ class MainActivity : ComponentActivity() {
         // Initialize NewPipe
         try {
             org.schabi.newpipe.extractor.NewPipe.init(dev.abu.material3.player.NewPipeDownloader())
+            Logger.logInfo(TAG, "NewPipe initialized successfully")
         } catch (e: Exception) {
-            e.printStackTrace()
+            Logger.logError(TAG, "Failed to initialize NewPipe", e)
         }
         
         SocketManager.init(this)

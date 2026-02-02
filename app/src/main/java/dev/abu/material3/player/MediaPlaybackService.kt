@@ -27,15 +27,19 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dev.abu.material3.MainActivity
 import dev.abu.material3.data.api.SocketManager
+import dev.abu.material3.utils.Logger
 import kotlinx.coroutines.runBlocking
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.StreamInfo
+import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(UnstableApi::class)
 class MediaPlaybackService : MediaSessionService() {
     
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
+    private val urlCache = ConcurrentHashMap<String, Pair<String, Long>>() // videoId -> (url, expiry)
+    private val CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
     
     companion object {
         private const val TAG = "MediaPlaybackService"
@@ -49,7 +53,7 @@ class MediaPlaybackService : MediaSessionService() {
     
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "onCreate")
+        Logger.logInfo(TAG, "onCreate")
         createNotificationChannel()
         initializePlayer()
         initializeMediaSession()
@@ -87,14 +91,14 @@ class MediaPlaybackService : MediaSessionService() {
             .apply {
                 addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(playbackState: Int) {
-                        Log.d(TAG, "Playback state: $playbackState")
+                        Logger.logInfo(TAG, "Playback state changed: $playbackState")
                         if (playbackState == Player.STATE_ENDED) {
                             SocketManager.next()
                         }
                     }
                     
                     override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                        Log.e(TAG, "Player error: ${error.message}", error)
+                        Logger.logError(TAG, "Player error: ${error.message}", error)
                     }
                 })
             }
@@ -107,25 +111,36 @@ class MediaPlaybackService : MediaSessionService() {
 
         return ResolvingDataSource.Factory(httpDataSourceFactory) { dataSpec ->
             val mediaId = dataSpec.uri.toString()
-            Log.d(TAG, "Resolving data source for: $mediaId")
             
             // If it's already a full URL (not just a videoId), return as is
             if (mediaId.startsWith("http") || mediaId.contains("://")) {
-                Log.d(TAG, "Direct URL detected, skipping resolution")
                 return@Factory dataSpec
             }
             
+            // Check cache
+            val cached = urlCache[mediaId]
+            if (cached != null && System.currentTimeMillis() < cached.second) {
+                Logger.logInfo(TAG, "Using cached URL for $mediaId")
+                return@Factory dataSpec.withUri(android.net.Uri.parse(cached.first))
+            }
+            
             // Resolve videoId to stream URL using NewPipe Extractor
-            val resolvedUrl = runBlocking {
-                Log.d(TAG, "Fetching stream URL for: $mediaId via NewPipe")
-                getVideoStreamUrl(mediaId)
+            val resolvedUrl = try {
+                runBlocking {
+                    Logger.logInfo(TAG, "Fetching stream URL for: $mediaId via NewPipe")
+                    getVideoStreamUrl(mediaId)
+                }
+            } catch (e: Exception) {
+                Logger.logError(TAG, "runBlocking resolution failed for $mediaId", e)
+                null
             }
             
             if (resolvedUrl != null) {
-                Log.d(TAG, "Resolved to: $resolvedUrl")
+                Logger.logInfo(TAG, "Resolved $mediaId to: $resolvedUrl")
+                urlCache[mediaId] = Pair(resolvedUrl, System.currentTimeMillis() + CACHE_DURATION)
                 dataSpec.withUri(android.net.Uri.parse(resolvedUrl))
             } else {
-                Log.e(TAG, "Failed to resolve stream URL for: $mediaId")
+                Logger.logError(TAG, "Failed to resolve stream URL for: $mediaId")
                 dataSpec
             }
         }
@@ -144,22 +159,28 @@ class MediaPlaybackService : MediaSessionService() {
             // Get the best audio stream
             val audioStreams = extractor.audioStreams
             if (audioStreams.isNotEmpty()) {
-                // Return the URL of the first (usually best) audio stream
-                return audioStreams[0].url
+                val bestStream = audioStreams.sortedByDescending { it.bitrate }.first()
+                Logger.logInfo(TAG, "NewPipe found ${audioStreams.size} streams for $videoId, using bitrate: ${bestStream.bitrate}")
+                return bestStream.url
+            } else {
+                Logger.logError(TAG, "NewPipe found no audio streams for $videoId")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "NewPipe resolution failed for $videoId: ${e.message}")
+            Logger.logError(TAG, "NewPipe resolution failed for $videoId: ${e.message}", e)
         }
         
         // Fallback to backend API if NewPipe fails
         try {
-            Log.d(TAG, "Trying backend fallback for $videoId")
+            Logger.logInfo(TAG, "Trying backend fallback for $videoId")
             val response = SocketManager.getApiService().getStreamUrl(videoId)
             if (response.url.isNotBlank()) {
+                Logger.logInfo(TAG, "Backend fallback successful for $videoId")
                 return response.url
+            } else {
+                Logger.logError(TAG, "Backend fallback returned empty URL for $videoId")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Backend fallback failed: ${e.message}")
+            Logger.logError(TAG, "Backend fallback failed for $videoId", e)
         }
         
         return null
@@ -183,7 +204,7 @@ class MediaPlaybackService : MediaSessionService() {
     }
     
     override fun onDestroy() {
-        Log.d(TAG, "onDestroy")
+        Logger.logInfo(TAG, "onDestroy")
         mediaSession?.run {
             player.release()
             release()
