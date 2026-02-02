@@ -117,7 +117,15 @@ fun MainScreen() {
         ) {
             options.forEachIndexed { index, label ->
                 val isSelected = index == selectedIndex
-                val shape = if (isSelected) RoundedCornerShape(50) else RoundedCornerShape(8.dp)
+                val shape = if (isSelected) {
+                    RoundedCornerShape(50)
+                } else {
+                    when (index) {
+                        0 -> RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 8.dp, bottomEnd = 8.dp)
+                        options.size - 1 -> RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+                        else -> RoundedCornerShape(8.dp)
+                    }
+                }
                 
                 SegmentedButton(
                     modifier = Modifier
@@ -151,7 +159,7 @@ fun MainScreen() {
                             Text(
                                 text = label,
                                 fontFamily = inter,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp
                             )
                         }
