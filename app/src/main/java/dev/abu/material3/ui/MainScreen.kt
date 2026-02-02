@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,9 +54,10 @@ fun MainScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 16.dp, top = 16.dp, end = 16.dp)
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
     ) {
-        Spacer(modifier = Modifier.size(20.dp)) // Increased top spacing
+        Spacer(modifier = Modifier.size(29.dp)) // Added 29dp spacing from status bar
         
         Row(
             verticalAlignment = Alignment.CenterVertically,
