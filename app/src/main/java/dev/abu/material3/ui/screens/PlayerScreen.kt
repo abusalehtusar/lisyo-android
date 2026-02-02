@@ -98,6 +98,10 @@ fun PlayerScreen(
     
     val snackbarHostState = remember { SnackbarHostState() }
     
+    BackHandler {
+        onLeave()
+    }
+    
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Songs", "Chat", "Session")
     val icons = listOf(Icons.Default.MusicNote, Icons.Default.Chat, Icons.Default.Group)
