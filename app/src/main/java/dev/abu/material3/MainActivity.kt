@@ -111,6 +111,9 @@ fun MainScreen() {
                 val shape = if (isSelected) RoundedCornerShape(50) else SegmentedButtonDefaults.itemShape(index = index, count = options.size)
                 
                 SegmentedButton(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 4.dp),
                     shape = shape,
                     onClick = { selectedIndex = index },
                     selected = isSelected,
