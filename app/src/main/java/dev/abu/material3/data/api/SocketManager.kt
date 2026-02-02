@@ -427,16 +427,7 @@ object SocketManager {
         scope.launch {
             _isSearching.value = true
             try {
-                val response = apiService.search(query)
-                val songs = response.content.map { item ->
-                    Song(
-                        id = item.videoId,
-                        title = item.name,
-                        artist = item.artist?.name ?: "Unknown",
-                        duration = (item.duration ?: 0) * 1000L, // Convert seconds to ms
-                        coverUrl = item.thumbnails?.lastOrNull()?.url
-                    )
-                }
+                val songs = dev.abu.material3.player.YouTubeSearchExtractor.search(query)
                 _searchResults.value = songs
             } catch (e: Exception) {
                 e.printStackTrace()
