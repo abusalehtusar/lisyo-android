@@ -63,6 +63,15 @@ val jetbrainsMono = FontFamily(
     Font(R.font.jetbrains_mono_regular)
 )
 
+val inter = FontFamily(
+    Font(R.font.inter_regular, FontWeight.Normal),
+    Font(R.font.inter_bold, FontWeight.Bold),
+    Font(R.font.inter_medium, FontWeight.Medium),
+    Font(R.font.inter_semi_bold, FontWeight.SemiBold),
+    Font(R.font.inter_black, FontWeight.Black),
+    Font(R.font.inter_light, FontWeight.Light)
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
@@ -95,7 +104,7 @@ fun MainScreen() {
             )
             Text(
                 text = "Lisyo",
-                fontFamily = jetbrainsMono,
+                fontFamily = inter,
                 style = MaterialTheme.typography.headlineSmall,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
@@ -108,12 +117,12 @@ fun MainScreen() {
         ) {
             options.forEachIndexed { index, label ->
                 val isSelected = index == selectedIndex
-                val shape = if (isSelected) RoundedCornerShape(50) else SegmentedButtonDefaults.itemShape(index = index, count = options.size)
+                val shape = if (isSelected) RoundedCornerShape(50) else RoundedCornerShape(8.dp)
                 
                 SegmentedButton(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 4.dp),
+                        .padding(horizontal = 3.dp),
                     shape = shape,
                     onClick = { selectedIndex = index },
                     selected = isSelected,
@@ -141,8 +150,9 @@ fun MainScreen() {
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = label,
-                                fontFamily = jetbrainsMono,
-                                fontSize = 14.sp
+                                fontFamily = inter,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
                             )
                         }
                     },
