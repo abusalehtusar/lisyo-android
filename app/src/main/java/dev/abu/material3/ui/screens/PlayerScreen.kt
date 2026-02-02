@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MusicNote
@@ -54,6 +55,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -330,10 +333,6 @@ fun ChatTab(messages: List<ChatMessage>) {
     }
 }
 
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
-
 @Composable
 fun SessionTab(users: List<dev.abu.material3.data.model.SessionUser>, roomName: String) {
     val clipboardManager = LocalClipboardManager.current
@@ -382,4 +381,3 @@ fun SessionTab(users: List<dev.abu.material3.data.model.SessionUser>, roomName: 
         }
     }
 }
-
