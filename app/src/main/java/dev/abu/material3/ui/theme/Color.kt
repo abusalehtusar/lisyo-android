@@ -13,3 +13,7 @@ val OnOceanDark = Color(0xFFFFFFFF)
 val DeepBlue = Color(0xFF005F73) // Darker selected state
 val SoftWhite = Color(0xFFF8FAFC) // Whiter unselected state
 val BorderLight = Color(0xFFE2E8F0) // Light border
+
+// Updated Palette
+val PurpleSelected = Color(0xFF403266)
+val PurpleBrighter = Color(0xFFCBC0E6)

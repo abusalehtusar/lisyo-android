@@ -46,6 +46,8 @@ import dev.abu.material3.ui.theme.OceanSecondary
 import dev.abu.material3.ui.theme.DeepBlue
 import dev.abu.material3.ui.theme.SoftWhite
 import dev.abu.material3.ui.theme.BorderLight
+import dev.abu.material3.ui.theme.PurpleSelected
+import dev.abu.material3.ui.theme.PurpleBrighter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -139,16 +141,16 @@ fun MainScreen() {
                     onClick = { selectedIndex = index },
                     selected = isSelected,
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = DeepBlue,
+                        activeContainerColor = PurpleSelected,
                         activeContentColor = Color.White,
-                        inactiveContainerColor = SoftWhite,
-                        inactiveContentColor = OceanDark,
-                        activeBorderColor = DeepBlue,
-                        inactiveBorderColor = BorderLight
+                        inactiveContainerColor = PurpleBrighter,
+                        inactiveContentColor = PurpleSelected,
+                        activeBorderColor = Color.Transparent,
+                        inactiveBorderColor = Color.Transparent
                     ),
                     border = SegmentedButtonDefaults.borderStroke(
-                        color = if (isSelected) DeepBlue else BorderLight,
-                        width = 1.dp
+                        color = Color.Transparent,
+                        width = 0.dp
                     ),
                     label = {
                         Row(
