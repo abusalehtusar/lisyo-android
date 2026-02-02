@@ -62,8 +62,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.abu.material3.ui.theme.LisyoTheme
 
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
             LisyoTheme {
@@ -106,7 +112,7 @@ fun MainScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(start = 16.dp, top = 16.dp, end = 16.dp)
     ) {
         Spacer(modifier = Modifier.size(8.dp)) // Reduced top spacing
         
@@ -254,7 +260,10 @@ val dummyRooms = listOf(
 @Composable
 fun PublicScreen() {
     LazyColumn(
-        contentPadding = PaddingValues(vertical = 8.dp),
+        contentPadding = PaddingValues(
+            top = 8.dp,
+            bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.fillMaxSize()
     ) {
