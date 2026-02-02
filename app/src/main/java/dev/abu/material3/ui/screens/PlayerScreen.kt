@@ -133,6 +133,22 @@ fun PlayerScreen(
 @Composable
 fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
     var searchQuery by remember { mutableStateOf("") }
+    var currentProgress by remember { mutableStateOf(0L) }
+    
+    // Local timer to update progress bar smoothly
+    LaunchedEffect(isPlaying, currentSong) {
+        if (isPlaying && currentSong != null) {
+            val startTime = System.currentTimeMillis()
+            val startPos = SocketManager.getCurrentPosition()
+            while (true) {
+                val elapsed = System.currentTimeMillis() - startTime
+                currentProgress = startPos + elapsed
+                kotlinx.coroutines.delay(1000) // Update every second
+            }
+        } else if (!isPlaying) {
+             currentProgress = SocketManager.getCurrentPosition()
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Search Bar
@@ -187,8 +203,11 @@ fun SongsTab(isPlaying: Boolean, currentSong: Song?, queue: List<Song>) {
                 
                 Spacer(Modifier.height(12.dp))
                 
+                val duration = currentSong?.duration ?: 1L
+                val progressFraction = (currentProgress.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                
                 LinearProgressIndicator(
-                    progress = { 0.5f }, // TODO: Animate real progress
+                    progress = { progressFraction },
                     modifier = Modifier.fillMaxWidth().height(4.dp),
                 )
                 

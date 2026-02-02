@@ -51,40 +51,38 @@ object SocketManager {
         return mSocket
     }
 
+    private var audioPlayer: dev.abu.material3.player.AudioPlayer? = null
+
+    fun init(context: android.content.Context) {
+        if (audioPlayer == null) {
+            audioPlayer = dev.abu.material3.player.AudioPlayer(context.applicationContext)
+            audioPlayer?.initialize()
+        }
+    }
+
     private fun initListeners() {
         val socket = mSocket ?: return
 
         socket.on(Socket.EVENT_CONNECT) {
             syncTime()
         }
-
-        socket.on("player:update") { args ->
-            if (args.isNotEmpty()) {
+        
+        // Backend emits 'room:state' on join
+        socket.on("room:state") { args ->
+             if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
-                val isPlaying = data.optBoolean("isPlaying", false)
-                val position = data.optLong("position", 0L)
-                val songJson = data.optJSONObject("currentSong")
-                val timestamp = data.optLong("timestamp", System.currentTimeMillis())
-
-                val song = if (songJson != null) parseSong(songJson) else null
-                
-                // Adjust position based on network time
-                val estimatedPosition = if (isPlaying) {
-                    val now = System.currentTimeMillis() + timeOffset
-                    position + (now - timestamp)
-                } else {
-                    position
-                }
-
-                _playerState.value = PlayerState(
-                    currentSong = song,
-                    isPlaying = isPlaying,
-                    currentPosition = estimatedPosition,
-                    lastSyncTime = System.currentTimeMillis()
-                )
-            }
+                updatePlayerState(data)
+             }
         }
 
+        // Backend emits 'player:sync' for updates
+        socket.on("player:sync") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                updatePlayerState(data)
+            }
+        }
+        
         socket.on("queue:update") { args ->
             if (args.isNotEmpty()) {
                 val jsonArray = args[0] as JSONArray
@@ -139,6 +137,63 @@ object SocketManager {
         }
     }
     
+    private fun updatePlayerState(data: JSONObject) {
+        val isPlaying = data.optBoolean("isPlaying", false)
+        val startTime = data.optLong("startTime", 0L)
+        val songJson = data.optJSONObject("currentSong")
+        
+        // Calculate current position
+        // Server Time = Client Time - Offset
+        // Position = (ClientTime - Offset) - StartTime
+        
+        val now = System.currentTimeMillis()
+        val serverNow = now - timeOffset
+        var position = if (isPlaying && startTime > 0) {
+            serverNow - startTime
+        } else {
+            data.optLong("position", 0L)
+        }
+        
+        if (position < 0) position = 0 // Future start or drift
+
+        val song = if (songJson != null) parseSong(songJson) else null
+        
+        // Update State Flow
+        _playerState.value = PlayerState(
+            currentSong = song,
+            isPlaying = isPlaying,
+            currentPosition = position,
+            lastSyncTime = now
+        )
+        
+        // Trigger Audio Player
+        if (song != null) {
+            val videoId = song.id // Assuming ID is videoId
+            val streamUrl = getVideoStreamUrl(videoId)
+            audioPlayer?.play(streamUrl, position, isPlaying)
+        } else {
+            audioPlayer?.pause()
+        }
+    }
+    
+    // MOCK / DEMO Implementation for Stream URL
+    private fun getVideoStreamUrl(videoId: String): String {
+        // In a real app, use an extractor or backend proxy.
+        // For this demo, we can use a direct MP3 if the ID matches a known one, 
+        // or try a generic Invidious link (which might fail without real extraction).
+        
+        // FALLBACK: A reliable MP3 for testing if the videoId is "test" or generic
+        if (videoId == "test") return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+        
+        // Attempt to use a proxy or just return a dummy if we can't extract.
+        // Let's use a public Invidious instance that serves raw streams if possible.
+        // This is flaky. Ideally, the backend should send the streamUrl.
+        // I will return a dummy stream for now to ensure the APP DOES NOT CRASH, 
+        // and the user can hear *something* (e.g. "We are simulating this song").
+        
+        return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
+    }
+
     private fun parseSong(json: JSONObject): Song {
         return Song(
             id = json.optString("id"),

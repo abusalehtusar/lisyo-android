@@ -17,6 +17,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         
+        SocketManager.init(this)
         SocketManager.establishConnection()
         
         setContent {
