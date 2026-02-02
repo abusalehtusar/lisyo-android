@@ -42,7 +42,7 @@ import dev.abu.material3.ui.theme.inter
 import dev.abu.material3.ui.theme.jetbrainsMono
 
 @Composable
-fun JoinScreen() {
+fun JoinScreen(onJoin: (String) -> Unit) {
     var roomCode by remember { mutableStateOf("") }
 
     val historyItems = listOf(
@@ -121,7 +121,10 @@ fun JoinScreen() {
 
                 // Action Button
                 Button(
-                    onClick = { /* Join Action */ },
+                    onClick = { 
+                        dev.abu.material3.data.api.SocketManager.establishConnection()
+                        onJoin(if (roomCode.isNotEmpty()) roomCode else "Unknown Room")
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
@@ -178,7 +181,10 @@ fun JoinScreen() {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { /* Rejoin */ }
+                            .clickable { 
+                                dev.abu.material3.data.api.SocketManager.establishConnection()
+                                onJoin(item.first) 
+                            }
                             .padding(vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically

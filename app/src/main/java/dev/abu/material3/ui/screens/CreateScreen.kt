@@ -53,7 +53,7 @@ import dev.abu.material3.ui.theme.jetbrainsMono
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun CreateScreen() {
+fun CreateScreen(onJoin: (String) -> Unit) {
     var username by remember { mutableStateOf("") }
     var roomName by remember { mutableStateOf("") }
     var selectedGenre by remember { mutableStateOf("Lofi") }
@@ -247,7 +247,10 @@ fun CreateScreen() {
 
                 // Action Button
                 Button(
-                    onClick = { /* Create Room Action */ },
+                    onClick = { 
+                        dev.abu.material3.data.api.SocketManager.establishConnection()
+                        onJoin(if (roomName.isNotEmpty()) roomName else "My Room")
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),

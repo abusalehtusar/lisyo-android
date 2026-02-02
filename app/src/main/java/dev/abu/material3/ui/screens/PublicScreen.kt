@@ -96,7 +96,7 @@ val dummyRooms = listOf(
 )
 
 @Composable
-fun PublicScreen() {
+fun PublicScreen(onJoin: (String) -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(
             top = 8.dp,
@@ -106,13 +106,13 @@ fun PublicScreen() {
         modifier = Modifier.fillMaxSize()
     ) {
         items(dummyRooms) { room ->
-            RoomCard(room)
+            RoomCard(room, onJoin)
         }
     }
 }
 
 @Composable
-fun RoomCard(room: Room) {
+fun RoomCard(room: Room, onJoin: (String) -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -266,7 +266,10 @@ fun RoomCard(room: Room) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
-                    onClick = { /* Join action */ },
+                    onClick = { 
+                        dev.abu.material3.data.api.SocketManager.establishConnection()
+                        onJoin(room.roomName)
+                    },
                     shape = RoundedCornerShape(50), // Capsule
                     modifier = Modifier
                         .weight(1f)

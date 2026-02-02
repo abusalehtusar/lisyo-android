@@ -44,6 +44,8 @@ import dev.abu.material3.ui.theme.jetbrainsMono
 @Composable
 fun MainScreen() {
     var selectedIndex by remember { mutableIntStateOf(0) }
+    var activeRoomName by remember { mutableStateOf<String?>(null) }
+    
     val options = listOf("Public", "Create", "Join")
     val icons = listOf(
         Icons.Filled.Public,
@@ -51,105 +53,112 @@ fun MainScreen() {
         Icons.AutoMirrored.Filled.Login
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp)
-    ) {
-        Spacer(modifier = Modifier.size(20.dp)) // Set to 20dp spacing from status bar
-        
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 19.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.GraphicEq,
-                contentDescription = "App Icon",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(44.dp)
-            )
-            Text(
-                text = "Lisyo",
-                fontFamily = jetbrainsMono,
-                style = MaterialTheme.typography.headlineSmall,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            options.forEachIndexed { index, label ->
-                val isSelected = index == selectedIndex
-                val shape = if (isSelected) {
-                    RoundedCornerShape(50)
-                } else {
-                    when (index) {
-                        0 -> RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 4.dp, bottomEnd = 4.dp)
-                        options.size - 1 -> RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 50.dp, bottomEnd = 50.dp)
-                        else -> RoundedCornerShape(4.dp)
-                    }
-                }
-                
-                SegmentedButton(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 2.dp),
-                    shape = shape,
-                    onClick = { selectedIndex = index },
-                    selected = isSelected,
-                    colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainer, // Use surfaceContainer for better contrast than pure surface
-                        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                        activeBorderColor = Color.Transparent,
-                        inactiveBorderColor = Color.Transparent
-                    ),
-                    border = SegmentedButtonDefaults.borderStroke(
-                        color = Color.Transparent,
-                        width = 0.dp
-                    ),
-                    label = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = icons[index],
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = label,
-                                fontFamily = inter,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 16.sp
-                            )
-                        }
-                    },
-                    icon = {} 
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.size(12.dp))
-
-        Box(
+    if (activeRoomName != null) {
+        dev.abu.material3.ui.screens.PlayerScreen(
+            roomName = activeRoomName!!,
+            onLeave = { activeRoomName = null }
+        )
+    } else {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f),
-            contentAlignment = Alignment.Center
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp)
         ) {
-            when (selectedIndex) {
-                0 -> PublicScreen()
-                1 -> CreateScreen()
-                2 -> JoinScreen()
+            Spacer(modifier = Modifier.size(20.dp)) // Set to 20dp spacing from status bar
+            
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 19.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.GraphicEq,
+                    contentDescription = "App Icon",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .size(44.dp)
+                )
+                Text(
+                    text = "Lisyo",
+                    fontFamily = jetbrainsMono,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                options.forEachIndexed { index, label ->
+                    val isSelected = index == selectedIndex
+                    val shape = if (isSelected) {
+                        RoundedCornerShape(50)
+                    } else {
+                        when (index) {
+                            0 -> RoundedCornerShape(topStart = 50.dp, bottomStart = 50.dp, topEnd = 4.dp, bottomEnd = 4.dp)
+                            options.size - 1 -> RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 50.dp, bottomEnd = 50.dp)
+                            else -> RoundedCornerShape(4.dp)
+                        }
+                    }
+                    
+                    SegmentedButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 2.dp),
+                        shape = shape,
+                        onClick = { selectedIndex = index },
+                        selected = isSelected,
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainer, // Use surfaceContainer for better contrast than pure surface
+                            inactiveContentColor = MaterialTheme.colorScheme.onSurface,
+                            activeBorderColor = Color.Transparent,
+                            inactiveBorderColor = Color.Transparent
+                        ),
+                        border = SegmentedButtonDefaults.borderStroke(
+                            color = Color.Transparent,
+                            width = 0.dp
+                        ),
+                        label = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = icons[index],
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = label,
+                                    fontFamily = inter,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        },
+                        icon = {} 
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.size(12.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                when (selectedIndex) {
+                    0 -> PublicScreen(onJoin = { activeRoomName = it })
+                    1 -> CreateScreen(onJoin = { activeRoomName = it })
+                    2 -> JoinScreen(onJoin = { activeRoomName = it })
+                }
             }
         }
     }
