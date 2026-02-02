@@ -48,14 +48,24 @@ import androidx.compose.ui.unit.sp
 import dev.abu.material3.ui.theme.inter
 import dev.abu.material3.ui.theme.jetbrainsMono
 
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.IconButton
+
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CreateScreen() {
+    var username by remember { mutableStateOf("") }
     var roomName by remember { mutableStateOf("") }
     var selectedGenre by remember { mutableStateOf("Lofi") }
     var isPrivate by remember { mutableStateOf(false) }
     
     val genres = listOf("Lofi", "Pop", "Jazz", "Rock", "Techno", "K-Pop", "Classical")
+
+    fun generateRandomUsername() {
+        val adj = listOf("Cool", "Happy", "Lazy", "Silent", "Neon", "Cyber", "Retro")
+        val noun = listOf("Cat", "Fox", "Panda", "User", "Ghost", "Surfer", "Pilot")
+        username = "${adj.random()}${noun.random()}${ (10..99).random() }"
+    }
 
     Column(
         modifier = Modifier
@@ -91,6 +101,37 @@ fun CreateScreen() {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+
+                Spacer(modifier = Modifier.size(24.dp))
+
+                // Username Input
+                Text(
+                    text = "Identity",
+                    fontFamily = jetbrainsMono,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Your Alias", fontFamily = inter) },
+                    placeholder = { Text("e.g. NeonGhost", fontFamily = inter) },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    trailingIcon = {
+                        IconButton(onClick = { generateRandomUsername() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Randomize")
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    )
+                )
 
                 Spacer(modifier = Modifier.size(24.dp))
 

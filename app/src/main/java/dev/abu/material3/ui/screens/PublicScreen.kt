@@ -51,7 +51,7 @@ import dev.abu.material3.ui.theme.jetbrainsMono
 data class Room(
     val id: Int,
     val countryFlag: String,
-    val countryName: String,
+    val vibe: String,
     val username: String,
     val songs: List<String>,
     val totalSongs: Int,
@@ -62,32 +62,32 @@ data class Room(
 
 val dummyRooms = listOf(
     Room(
-        1, "🇺🇸", "USA", "dj_mike",
+        1, "🇺🇸", "Lofi", "dj_mike",
         listOf("Blinding Lights - The Weeknd", "As It Was - Harry Styles", "Stay - Justin Bieber"),
         42, 128, "2h 15m", Color(0xFFE3F2FD)
     ),
     Room(
-        2, "🇯🇵", "Japan", "sakura_beats",
+        2, "🇯🇵", "City Pop", "sakura_beats",
         listOf("Plastic Love - Mariya Takeuchi", "Stay With Me - Miki Matsubara", "Mayonaka no Door - Miki Matsubara"),
         24, 85, "1h 45m", Color(0xFFFFEBEE)
     ),
     Room(
-        3, "🇧🇷", "Brazil", "rio_vibes",
+        3, "🇧🇷", "Bossa Nova", "rio_vibes",
         listOf("Garota de Ipanema - Tom Jobim", "Mas Que Nada - Jorge Ben Jor", "Águas de Março - Elis Regina"),
         30, 64, "1h 30m", Color(0xFFE8F5E9)
     ),
     Room(
-        4, "🇬🇧", "UK", "brit_pop_fan",
+        4, "🇬🇧", "Britpop", "brit_pop_fan",
         listOf("Wonderwall - Oasis", "Bitter Sweet Symphony - The Verve", "Don't Look Back in Anger - Oasis"),
         55, 210, "3h 20m", Color(0xFFF3E5F5)
     ),
     Room(
-        5, "🇩🇪", "Germany", "techno_hans",
+        5, "🇩🇪", "Techno", "techno_hans",
         listOf("The Model - Kraftwerk", "Das Boot - U96", "Sonne - Rammstein"),
         18, 45, "1h 10m", Color(0xFFFFF3E0)
     ),
     Room(
-        6, "🇰🇷", "Korea", "kpop_stan",
+        6, "🇰🇷", "K-Pop", "kpop_stan",
         listOf("Super Shy - NewJeans", "Dynamite - BTS", "Fancy - TWICE"),
         60, 350, "4h 00m", Color(0xFFFCE4EC)
     )
@@ -143,11 +143,11 @@ fun RoomCard(room: Room) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "${room.countryName} / ${room.username}",
+                            text = "${room.vibe} / ${room.username}",
                             fontFamily = jetbrainsMono,
                             fontWeight = FontWeight.SemiBold,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -164,13 +164,13 @@ fun RoomCard(room: Room) {
                                 imageVector = Icons.Default.MusicNote,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                             if (index < 2) {
                                 Box(
                                     modifier = Modifier
                                         .width(2.dp)
-                                        .height(12.dp) // Connected with vertical line, not full connected
+                                        .height(14.dp) // Connected with vertical line, not full connected
                                         .background(MaterialTheme.colorScheme.outlineVariant)
                                 )
                             }
@@ -179,8 +179,8 @@ fun RoomCard(room: Room) {
                         Text(
                             text = song,
                             fontFamily = jetbrainsMono, // JetBrains font for contents
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -205,13 +205,13 @@ fun RoomCard(room: Room) {
                         imageVector = Icons.Default.LibraryMusic,
                         contentDescription = "Total Songs",
                         tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = "${room.totalSongs} Songs",
                         fontFamily = jetbrainsMono,
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.tertiary
                     )
                 }
@@ -224,13 +224,13 @@ fun RoomCard(room: Room) {
                         imageVector = Icons.Default.Person,
                         contentDescription = "Users",
                         tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = "${room.userCount}",
                         fontFamily = jetbrainsMono,
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.tertiary
                     )
                 }
@@ -243,13 +243,13 @@ fun RoomCard(room: Room) {
                         imageVector = Icons.Default.Schedule,
                         contentDescription = "Duration",
                         tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = room.totalDuration,
                         fontFamily = jetbrainsMono,
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.tertiary
                     )
                 }

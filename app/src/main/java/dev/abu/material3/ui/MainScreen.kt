@@ -55,7 +55,7 @@ fun MainScreen() {
             .fillMaxSize()
             .padding(start = 16.dp, top = 16.dp, end = 16.dp)
     ) {
-        Spacer(modifier = Modifier.size(8.dp)) // Reduced top spacing
+        Spacer(modifier = Modifier.size(20.dp)) // Increased top spacing
         
         Row(
             verticalAlignment = Alignment.CenterVertically,
