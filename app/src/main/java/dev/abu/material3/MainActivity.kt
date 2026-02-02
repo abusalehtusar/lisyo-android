@@ -358,7 +358,7 @@ fun RoomCard(room: Room) {
                     Icon(
                         imageVector = Icons.Default.LibraryMusic,
                         contentDescription = "Total Songs",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(6.dp))
@@ -366,7 +366,7 @@ fun RoomCard(room: Room) {
                         text = "${room.totalSongs} Songs",
                         fontFamily = jetbrainsMono,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
 
@@ -396,7 +396,7 @@ fun RoomCard(room: Room) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = "Duration",
-                        tint = MaterialTheme.colorScheme.error,
+                        tint = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(6.dp))
@@ -404,7 +404,7 @@ fun RoomCard(room: Room) {
                         text = room.totalDuration,
                         fontFamily = jetbrainsMono,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
             }
@@ -446,7 +446,7 @@ fun RoomCard(room: Room) {
                     Icon(
                         imageVector = Icons.Outlined.Flag,
                         contentDescription = "Report",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.error
                     )
                 }
             }
