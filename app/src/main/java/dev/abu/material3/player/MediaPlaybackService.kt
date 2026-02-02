@@ -29,8 +29,6 @@ import dev.abu.material3.MainActivity
 import dev.abu.material3.data.api.SocketManager
 import dev.abu.material3.utils.Logger
 import kotlinx.coroutines.runBlocking
-import org.json.JSONObject
-import org.schabi.newpipe.extractor.ServiceList
 import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(UnstableApi::class)
@@ -40,15 +38,6 @@ class MediaPlaybackService : MediaSessionService() {
     private var player: ExoPlayer? = null
     private val urlCache = ConcurrentHashMap<String, Pair<String, Long>>() // videoId -> (url, expiry)
     private val CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
-    
-    // List of Piped instances to try as fallback
-    private val pipedInstances = listOf(
-        "https://pipedapi.kavin.rocks",
-        "https://api.piped.private.coffee",
-        "https://piped-api.lunar.icu",
-        "https://pipedapi.rivo.lol",
-        "https://pipedapi.astartes.nl"
-    )
     
     companion object {
         private const val TAG = "MediaPlaybackService"
@@ -157,88 +146,13 @@ class MediaPlaybackService : MediaSessionService() {
         if (videoId == "test") return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
         if (videoId.isBlank()) return null
         
-        // 1. Try Direct TVHTML5 Extraction (Most reliable currently)
-        try {
-            val url = YouTubePlayerExtractor.getAudioUrl(videoId)
-            if (url != null) {
-                Logger.logInfo(TAG, "TVHTML5 extraction successful for $videoId")
-                return url
-            }
+        // Use Direct TVHTML5 Extraction (Most reliable currently)
+        return try {
+            YouTubePlayerExtractor.getAudioUrl(videoId)
         } catch (e: Exception) {
             Logger.logError(TAG, "TVHTML5 extraction failed for $videoId", e)
+            null
         }
-
-        // 2. Try NewPipe Extractor
-        try {
-            val url = "https://www.youtube.com/watch?v=$videoId"
-            val extractor = ServiceList.YouTube.getStreamExtractor(url)
-            extractor.fetchPage()
-            val audioStreams = extractor.audioStreams
-            if (audioStreams.isNotEmpty()) {
-                val bestStream = audioStreams.sortedByDescending { it.bitrate }.first()
-                Logger.logInfo(TAG, "NewPipe success for $videoId")
-                return bestStream.url
-            }
-        } catch (e: Exception) {
-            Logger.logError(TAG, "NewPipe failed for $videoId: ${e.message}")
-        }
-        
-        // 3. Try Backend Fallback
-        try {
-            Logger.logInfo(TAG, "Trying backend fallback for $videoId")
-            val response = SocketManager.getApiService().getStreamUrl(videoId)
-            if (response.url.isNotBlank()) {
-                Logger.logInfo(TAG, "Backend success for $videoId")
-                return response.url
-            }
-        } catch (e: Exception) {
-            Logger.logError(TAG, "Backend fallback failed for $videoId")
-        }
-        
-        // 4. Try Piped API Instances directly
-        for (instance in pipedInstances) {
-            try {
-                Logger.logInfo(TAG, "Trying Piped instance $instance for $videoId")
-                val streamUrl = fetchFromPiped(instance, videoId)
-                if (streamUrl != null) {
-                    Logger.logInfo(TAG, "Piped instance success: $instance")
-                    return streamUrl
-                }
-            } catch (e: Exception) {
-                Logger.logError(TAG, "Piped instance $instance failed: ${e.message}")
-            }
-        }
-        
-        return null
-    }
-    
-    private suspend fun fetchFromPiped(instance: String, videoId: String): String? {
-        val url = java.net.URL("$instance/streams/$videoId")
-        val connection = url.openConnection() as java.net.HttpURLConnection
-        connection.requestMethod = "GET"
-        connection.setRequestProperty("Accept", "application/json")
-        connection.connectTimeout = 10000
-        connection.readTimeout = 10000
-        
-        if (connection.responseCode == 200) {
-            val responseText = connection.inputStream.bufferedReader().use { it.readText() }
-            val json = JSONObject(responseText)
-            val audioStreams = json.optJSONArray("audioStreams")
-            if (audioStreams != null && audioStreams.length() > 0) {
-                var bestUrl = ""
-                var bestBitrate = 0
-                for (i in 0 until audioStreams.length()) {
-                    val stream = audioStreams.getJSONObject(i)
-                    val bitrate = stream.optInt("bitrate", 0)
-                    if (bitrate > bestBitrate) {
-                        bestBitrate = bitrate
-                        bestUrl = stream.optString("url", "")
-                    }
-                }
-                if (bestUrl.isNotEmpty()) return bestUrl
-            }
-        }
-        return null
     }
     
     private fun initializeMediaSession() {

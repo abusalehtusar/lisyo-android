@@ -34,8 +34,6 @@ class MainActivity : ComponentActivity() {
         
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             Logger.logError(TAG, "Uncaught exception in thread ${thread.name}", throwable)
-            // Optionally, call the original handler to let the app crash normally
-            // Or just exit
         }
         
         // Request notification permission for Android 13+
@@ -53,14 +51,6 @@ class MainActivity : ComponentActivity() {
         // Start media playback service
         val serviceIntent = Intent(this, MediaPlaybackService::class.java)
         startService(serviceIntent)
-        
-        // Initialize NewPipe
-        try {
-            org.schabi.newpipe.extractor.NewPipe.init(dev.abu.material3.player.NewPipeDownloader())
-            Logger.logInfo(TAG, "NewPipe initialized successfully")
-        } catch (e: Exception) {
-            Logger.logError(TAG, "Failed to initialize NewPipe", e)
-        }
         
         SocketManager.init(this)
         SocketManager.establishConnection()
