@@ -57,7 +57,7 @@ fun MainScreen() {
             .statusBarsPadding()
             .padding(horizontal = 16.dp)
     ) {
-        Spacer(modifier = Modifier.size(29.dp)) // Added 29dp spacing from status bar
+        Spacer(modifier = Modifier.size(20.dp)) // Set to 20dp spacing from status bar
         
         Row(
             verticalAlignment = Alignment.CenterVertically,

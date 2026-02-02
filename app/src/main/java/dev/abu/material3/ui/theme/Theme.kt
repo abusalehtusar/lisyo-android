@@ -27,6 +27,8 @@ private val OceanColorScheme = darkColorScheme(
     onSurface = OnOceanDark,
 )
 
+import androidx.core.view.WindowCompat
+
 @Composable
 fun LisyoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -48,6 +50,10 @@ fun LisyoTheme(
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
             window.navigationBarColor = colorScheme.background.toArgb()
+            
+            val windowInsetsController = WindowCompat.getInsetsController(window, view)
+            windowInsetsController.isAppearanceLightStatusBars = !darkTheme
+            windowInsetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

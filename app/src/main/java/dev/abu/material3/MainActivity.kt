@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import dev.abu.material3.data.api.SocketManager
 import dev.abu.material3.ui.MainScreen
 import dev.abu.material3.ui.theme.LisyoTheme
 
@@ -15,6 +16,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        
+        SocketManager.establishConnection()
+        
         setContent {
             LisyoTheme {
                 Surface(
