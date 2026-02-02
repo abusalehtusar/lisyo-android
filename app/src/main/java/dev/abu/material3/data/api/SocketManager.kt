@@ -255,10 +255,9 @@ object SocketManager {
                 } else {
                     // Same song, just update play state
                     withContext(Dispatchers.Main) {
-                        if (isPlaying && !wasPlaying) {
-                            audioPlayer?.resume()
-                        } else if (!isPlaying && wasPlaying) {
-                            audioPlayer?.pause()
+                        when {
+                            isPlaying && !wasPlaying -> audioPlayer?.resume()
+                            !isPlaying && wasPlaying -> audioPlayer?.pause()
                         }
                     }
                 }
