@@ -13,7 +13,11 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
@@ -22,6 +26,8 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dev.abu.material3.MainActivity
 import dev.abu.material3.data.api.SocketManager
+import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 
 @OptIn(UnstableApi::class)
 class MediaPlaybackService : MediaSessionService() {
@@ -66,9 +72,13 @@ class MediaPlaybackService : MediaSessionService() {
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
             
+        val dataSourceFactory = createDataSourceFactory()
+        val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
+            
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
+            .setMediaSourceFactory(mediaSourceFactory)
             .build()
             .apply {
                 addListener(object : Player.Listener {
@@ -79,6 +89,82 @@ class MediaPlaybackService : MediaSessionService() {
                     }
                 })
             }
+    }
+
+    private fun createDataSourceFactory(): DataSource.Factory {
+        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+            .setAllowCrossProtocolRedirects(true)
+
+        return ResolvingDataSource.Factory(httpDataSourceFactory) { dataSpec ->
+            val mediaId = dataSpec.uri.toString()
+            
+            // If it's already a full URL (not just a videoId), return as is
+            if (mediaId.startsWith("http") || mediaId.contains("://")) {
+                return@Factory dataSpec
+            }
+            
+            // Resolve videoId to stream URL
+            val resolvedUrl = runBlocking {
+                getVideoStreamUrl(mediaId)
+            }
+            
+            if (resolvedUrl != null) {
+                dataSpec.withUri(android.net.Uri.parse(resolvedUrl))
+            } else {
+                dataSpec
+            }
+        }
+    }
+
+    private suspend fun getVideoStreamUrl(videoId: String): String? {
+        if (videoId == "test") return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+        if (videoId.isBlank()) return null
+        
+        try {
+            val response = SocketManager.getApiService().getStreamUrl(videoId)
+            if (response.url.isNotBlank()) {
+                return response.url
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
+        // Fallback to direct Piped API call
+        try {
+            val url = java.net.URL("https://pipedapi.kavin.rocks/streams/$videoId")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/json")
+            connection.connectTimeout = 10000
+            connection.readTimeout = 10000
+            
+            if (connection.responseCode == 200) {
+                val reader = java.io.BufferedReader(java.io.InputStreamReader(connection.inputStream))
+                val responseText = reader.readText()
+                reader.close()
+                
+                val json = JSONObject(responseText)
+                val audioStreams = json.optJSONArray("audioStreams")
+                if (audioStreams != null && audioStreams.length() > 0) {
+                    var bestUrl = ""
+                    var bestBitrate = 0
+                    for (i in 0 until audioStreams.length()) {
+                        val stream = audioStreams.getJSONObject(i)
+                        val bitrate = stream.optInt("bitrate", 0)
+                        if (bitrate > bestBitrate) {
+                            bestBitrate = bitrate
+                            bestUrl = stream.optString("url", "")
+                        }
+                    }
+                    if (bestUrl.isNotEmpty()) return bestUrl
+                }
+            }
+        } catch (e2: Exception) {
+            e2.printStackTrace()
+        }
+        
+        return null
     }
     
     private fun initializeMediaSession() {

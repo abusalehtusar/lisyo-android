@@ -26,7 +26,7 @@ class AudioPlayer(private val context: Context) {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
     
-    private var pendingUrl: String? = null
+    private var pendingMediaId: String? = null
     private var pendingPosition: Long = 0L
     private var pendingPlayWhenReady: Boolean = true
 
@@ -46,10 +46,10 @@ class AudioPlayer(private val context: Context) {
                     }
                 })
                 
-                // Play pending URL if any
-                pendingUrl?.let { url ->
-                    play(url, pendingPosition, pendingPlayWhenReady)
-                    pendingUrl = null
+                // Play pending mediaId if any
+                pendingMediaId?.let { mediaId ->
+                    play(mediaId, pendingPosition, pendingPlayWhenReady)
+                    pendingMediaId = null
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -57,11 +57,11 @@ class AudioPlayer(private val context: Context) {
         }, MoreExecutors.directExecutor())
     }
 
-    fun play(url: String, startPositionMs: Long = 0, playWhenReady: Boolean = true) {
+    fun play(mediaId: String, startPositionMs: Long = 0, playWhenReady: Boolean = true) {
         val controller = mediaController
         if (controller == null) {
             // Save for later when controller is ready
-            pendingUrl = url
+            pendingMediaId = mediaId
             pendingPosition = startPositionMs
             pendingPlayWhenReady = playWhenReady
             return
@@ -70,7 +70,7 @@ class AudioPlayer(private val context: Context) {
         CoroutineScope(Dispatchers.Main).launch {
             // Check if we are already playing this item to avoid reload
             val currentItem = controller.currentMediaItem
-            if (currentItem?.localConfiguration?.uri?.toString() == url) {
+            if (currentItem?.mediaId == mediaId) {
                 if (kotlin.math.abs(controller.currentPosition - startPositionMs) > 2000) {
                     controller.seekTo(startPositionMs)
                 }
@@ -81,8 +81,8 @@ class AudioPlayer(private val context: Context) {
             }
 
             val mediaItem = MediaItem.Builder()
-                .setMediaId(url)
-                .setUri(url)
+                .setMediaId(mediaId)
+                .setUri(mediaId)
                 .build()
 
             controller.setMediaItem(mediaItem)

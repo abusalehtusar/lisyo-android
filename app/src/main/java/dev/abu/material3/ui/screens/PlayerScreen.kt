@@ -95,22 +95,12 @@ fun PlayerScreen(
     val users by SocketManager.users.collectAsState()
     val shuffleEnabled by SocketManager.shuffleEnabled.collectAsState()
     val repeatMode by SocketManager.repeatMode.collectAsState()
-    val isLoadingStream by SocketManager.isLoadingStream.collectAsState()
-    val toastMessage by SocketManager.toastMessage.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Songs", "Chat", "Session")
     val icons = listOf(Icons.Default.MusicNote, Icons.Default.Chat, Icons.Default.Group)
-
-    // Handle toast messages
-    LaunchedEffect(toastMessage) {
-        toastMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            SocketManager.clearToast()
-        }
-    }
 
     LaunchedEffect(roomId, username) {
         SocketManager.establishConnection()
@@ -142,13 +132,6 @@ fun PlayerScreen(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        if (isLoadingStream) {
-                            Text(
-                                text = "Loading stream...",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
                     }
                     Spacer(Modifier.size(48.dp))
                 }
