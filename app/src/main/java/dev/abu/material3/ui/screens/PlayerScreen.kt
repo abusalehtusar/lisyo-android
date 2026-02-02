@@ -50,6 +50,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -93,10 +96,21 @@ fun PlayerScreen(
     val shuffleEnabled by SocketManager.shuffleEnabled.collectAsState()
     val repeatMode by SocketManager.repeatMode.collectAsState()
     val isLoadingStream by SocketManager.isLoadingStream.collectAsState()
+    val toastMessage by SocketManager.toastMessage.collectAsState()
+    
+    val snackbarHostState = remember { SnackbarHostState() }
     
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Songs", "Chat", "Session")
     val icons = listOf(Icons.Default.MusicNote, Icons.Default.Chat, Icons.Default.Group)
+
+    // Handle toast messages
+    LaunchedEffect(toastMessage) {
+        toastMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            SocketManager.clearToast()
+        }
+    }
 
     LaunchedEffect(roomId, username) {
         SocketManager.establishConnection()
@@ -104,6 +118,7 @@ fun PlayerScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column(
                 modifier = Modifier
@@ -231,13 +246,16 @@ fun SongsTab(
                 items(searchResults) { song ->
                     SongItem(
                         song = song,
-                        onPlay = { 
-                            SocketManager.playSong(song)
+                        onClick = { 
+                            // Click adds to queue and clears search
+                            SocketManager.addToQueue(song)
+                            SocketManager.showToast("Added to queue: ${song.title}")
                             searchQuery = ""
                             SocketManager.clearSearchResults()
                         },
                         onAddToQueue = {
                             SocketManager.addToQueue(song)
+                            SocketManager.showToast("Added to queue: ${song.title}")
                         }
                     )
                 }
@@ -269,9 +287,12 @@ fun SongsTab(
             ) {
                 items(queue.size) { index ->
                     val song = queue[index]
+                    val isCurrentSong = currentSong?.id == song.id
                     QueueItem(
                         song = song,
                         index = index,
+                        isCurrentSong = isCurrentSong,
+                        onClick = { SocketManager.playFromQueue(index) },
                         onRemove = { SocketManager.removeFromQueue(index) }
                     )
                 }
@@ -441,12 +462,12 @@ private fun formatDuration(ms: Long): String {
 }
 
 @Composable
-fun SongItem(song: Song, onPlay: () -> Unit, onAddToQueue: () -> Unit) {
+fun SongItem(song: Song, onClick: () -> Unit, onAddToQueue: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
-            .clickable(onClick = onPlay)
+            .clickable(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -463,24 +484,52 @@ fun SongItem(song: Song, onPlay: () -> Unit, onAddToQueue: () -> Unit) {
 }
 
 @Composable
-fun QueueItem(song: Song, index: Int, onRemove: () -> Unit) {
+fun QueueItem(song: Song, index: Int, isCurrentSong: Boolean, onClick: () -> Unit, onRemove: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(8.dp))
+            .background(
+                if (isCurrentSong) MaterialTheme.colorScheme.primaryContainer 
+                else MaterialTheme.colorScheme.surfaceContainer, 
+                RoundedCornerShape(8.dp)
+            )
+            .clickable(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             "${index + 1}",
             fontFamily = jetbrainsMono,
-            color = MaterialTheme.colorScheme.outline,
+            color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer 
+                    else MaterialTheme.colorScheme.outline,
             modifier = Modifier.width(24.dp)
         )
         Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(song.title, fontFamily = jetbrainsMono, fontWeight = FontWeight.SemiBold, maxLines = 1)
-            Text(song.artist, fontFamily = inter, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+            Text(
+                song.title, 
+                fontFamily = jetbrainsMono, 
+                fontWeight = FontWeight.SemiBold, 
+                maxLines = 1,
+                color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer 
+                        else MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                song.artist, 
+                fontFamily = inter, 
+                style = MaterialTheme.typography.bodySmall, 
+                maxLines = 1,
+                color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        if (isCurrentSong) {
+            Icon(
+                Icons.Default.MusicNote,
+                null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

@@ -63,16 +63,18 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
     var isPrivate by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var isGenerating by remember { mutableStateOf(true) }
+    var countryFlag by remember { mutableStateOf("🌐") }
     
     val scope = rememberCoroutineScope()
     val genres = listOf("Lofi", "Pop", "Jazz", "Rock", "Techno", "K-Pop", "Classical")
 
-    // Generate random names on first load
+    // Generate random names and get country flag on first load
     LaunchedEffect(Unit) {
         isGenerating = true
         val (generatedRoom, generatedUsername) = SocketManager.generateNames()
         roomName = generatedRoom
         username = generatedUsername
+        countryFlag = SocketManager.getCountryFlag()
         isGenerating = false
     }
 
@@ -103,13 +105,11 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
             Column(
                 modifier = Modifier.padding(24.dp)
             ) {
-                // Header
+                // Header with country flag
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.GraphicEq,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
+                    Text(
+                        text = countryFlag,
+                        fontSize = 28.sp
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
@@ -293,7 +293,8 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
                                     name = roomName.ifBlank { "My Room" },
                                     vibe = selectedGenre,
                                     isPrivate = isPrivate,
-                                    hostUsername = username
+                                    hostUsername = username,
+                                    countryFlag = countryFlag
                                 )
                                 isLoading = false
                                 if (roomId != null) {

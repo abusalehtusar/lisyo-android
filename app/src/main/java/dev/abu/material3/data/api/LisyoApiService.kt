@@ -21,6 +21,9 @@ interface LisyoApiService {
     
     @POST("/api/rooms")
     suspend fun createRoom(@Body request: CreateRoomRequest): CreateRoomResponse
+    
+    @GET("/api/location")
+    suspend fun getLocation(): LocationResponse
 }
 
 data class SearchResponse(
@@ -45,11 +48,18 @@ data class RoomResponse(
     val userCount: Int,
     val isPlaying: Boolean,
     val vibe: String = "Chill",
-    val countryFlag: String = "🇺🇳",
-    val currentSong: CurrentSongResponse? = null
+    val countryFlag: String = "🌐",
+    val currentSong: CurrentSongResponse? = null,
+    val queuePreview: List<QueueSongPreview>? = null,
+    val totalSongs: Int = 0
 )
 
 data class CurrentSongResponse(
+    val title: String,
+    val artist: String
+)
+
+data class QueueSongPreview(
     val title: String,
     val artist: String
 )
@@ -68,7 +78,8 @@ data class CreateRoomRequest(
     val name: String,
     val vibe: String,
     val isPrivate: Boolean,
-    val hostUsername: String
+    val hostUsername: String,
+    val countryFlag: String = "🌐"
 )
 
 data class CreateRoomResponse(
@@ -76,4 +87,9 @@ data class CreateRoomResponse(
     val name: String,
     val vibe: String,
     val isPrivate: Boolean
+)
+
+data class LocationResponse(
+    val countryCode: String,
+    val countryFlag: String
 )

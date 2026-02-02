@@ -66,6 +66,10 @@ object SocketManager {
     private val _isLoadingStream = MutableStateFlow(false)
     val isLoadingStream = _isLoadingStream.asStateFlow()
     
+    // Error/Toast messages
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage = _toastMessage.asStateFlow()
+    
     // Shuffle and Repeat
     private val _shuffleEnabled = MutableStateFlow(false)
     val shuffleEnabled = _shuffleEnabled.asStateFlow()
@@ -76,6 +80,10 @@ object SocketManager {
     // Current username
     private var _currentUsername = MutableStateFlow("")
     val currentUsername = _currentUsername.asStateFlow()
+    
+    // Track current playing song ID to avoid reloading same stream
+    private var currentStreamVideoId: String? = null
+    private var currentStreamUrl: String? = null
 
     private var timeOffset: Long = 0L
 
@@ -213,6 +221,8 @@ object SocketManager {
         if (position < 0) position = 0
 
         val song = if (songJson != null) parseSong(songJson) else null
+        val previousSongId = _playerState.value.currentSong?.id
+        val wasPlaying = _playerState.value.isPlaying
         
         _playerState.value = PlayerState(
             currentSong = song,
@@ -223,15 +233,38 @@ object SocketManager {
         
         scope.launch {
             if (song != null) {
-                _isLoadingStream.value = true
                 val videoId = song.id
-                val streamUrl = getVideoStreamUrl(videoId)
-                _isLoadingStream.value = false
                 
-                withContext(Dispatchers.Main) {
-                     audioPlayer?.play(streamUrl, position, isPlaying)
+                // Only fetch stream if song changed
+                if (videoId != currentStreamVideoId || currentStreamUrl == null) {
+                    _isLoadingStream.value = true
+                    val streamUrl = getVideoStreamUrl(videoId)
+                    _isLoadingStream.value = false
+                    
+                    if (streamUrl != null) {
+                        currentStreamVideoId = videoId
+                        currentStreamUrl = streamUrl
+                        
+                        withContext(Dispatchers.Main) {
+                            audioPlayer?.play(streamUrl, position, isPlaying)
+                            audioPlayer?.updateMetadata(song.title, song.artist)
+                        }
+                    } else {
+                        _toastMessage.value = "Failed to load audio stream"
+                    }
+                } else {
+                    // Same song, just update play state
+                    withContext(Dispatchers.Main) {
+                        if (isPlaying && !wasPlaying) {
+                            audioPlayer?.resume()
+                        } else if (!isPlaying && wasPlaying) {
+                            audioPlayer?.pause()
+                        }
+                    }
                 }
             } else {
+                currentStreamVideoId = null
+                currentStreamUrl = null
                 withContext(Dispatchers.Main) {
                     audioPlayer?.pause()
                 }
@@ -239,30 +272,45 @@ object SocketManager {
         }
     }
     
-    // Use Piped API for YouTube audio extraction
-    private suspend fun getVideoStreamUrl(videoId: String): String {
+    fun clearToast() {
+        _toastMessage.value = null
+    }
+    
+    fun showToast(message: String) {
+        _toastMessage.value = message
+    }
+    
+    // Use backend API (InnerTube) for YouTube audio extraction
+    private suspend fun getVideoStreamUrl(videoId: String): String? {
         if (videoId == "test") return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+        if (videoId.isBlank()) return null
         
         try {
             val response = apiService.getStreamUrl(videoId)
-            return response.url
+            if (response.url.isNotBlank()) {
+                return response.url
+            }
         } catch (e: Exception) {
             e.printStackTrace()
-            // Fallback to direct Piped API call
-            try {
-                val url = java.net.URL("https://pipedapi.kavin.rocks/streams/$videoId")
-                val connection = url.openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Accept", "application/json")
-                
+        }
+        
+        // Fallback to direct Piped API call
+        try {
+            val url = java.net.URL("https://pipedapi.kavin.rocks/streams/$videoId")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Accept", "application/json")
+            connection.connectTimeout = 10000
+            connection.readTimeout = 10000
+            
+            if (connection.responseCode == 200) {
                 val reader = java.io.BufferedReader(java.io.InputStreamReader(connection.inputStream))
-                val response = reader.readText()
+                val responseText = reader.readText()
                 reader.close()
                 
-                val json = JSONObject(response)
+                val json = JSONObject(responseText)
                 val audioStreams = json.optJSONArray("audioStreams")
                 if (audioStreams != null && audioStreams.length() > 0) {
-                    // Get highest bitrate audio
                     var bestUrl = ""
                     var bestBitrate = 0
                     for (i in 0 until audioStreams.length()) {
@@ -275,11 +323,12 @@ object SocketManager {
                     }
                     if (bestUrl.isNotEmpty()) return bestUrl
                 }
-            } catch (e2: Exception) {
-                e2.printStackTrace()
             }
-            return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+        } catch (e2: Exception) {
+            e2.printStackTrace()
         }
+        
+        return null
     }
 
     private fun parseMessage(data: JSONObject): ChatMessage {
@@ -339,19 +388,51 @@ object SocketManager {
         mSocket?.emit("player:play", data)
     }
 
+    // Debounce play/pause to prevent rapid clicks causing state issues
+    private var lastPlayPauseTime = 0L
+    private const val PLAY_PAUSE_DEBOUNCE_MS = 300L
+    
     fun pause() {
+        val now = System.currentTimeMillis()
+        if (now - lastPlayPauseTime < PLAY_PAUSE_DEBOUNCE_MS) return
+        lastPlayPauseTime = now
+        
+        if (!_playerState.value.isPlaying) return // Already paused
+        
+        _playerState.value = _playerState.value.copy(isPlaying = false)
         mSocket?.emit("player:pause")
+        audioPlayer?.pause()
     }
 
     fun resume() {
+        val now = System.currentTimeMillis()
+        if (now - lastPlayPauseTime < PLAY_PAUSE_DEBOUNCE_MS) return
+        lastPlayPauseTime = now
+        
+        if (_playerState.value.currentSong == null) {
+            _toastMessage.value = "No song to play"
+            return
+        }
+        if (_playerState.value.isPlaying) return // Already playing
+        
+        _playerState.value = _playerState.value.copy(isPlaying = true)
         mSocket?.emit("player:resume")
+        audioPlayer?.resume()
     }
     
     fun next() {
+        if (_queue.value.isEmpty()) {
+            _toastMessage.value = "Queue is empty"
+            return
+        }
         mSocket?.emit("player:next")
     }
     
     fun previous() {
+        if (_queue.value.isEmpty()) {
+            _toastMessage.value = "Queue is empty"
+            return
+        }
         mSocket?.emit("player:previous")
     }
     
@@ -364,6 +445,7 @@ object SocketManager {
         val newValue = !_shuffleEnabled.value
         _shuffleEnabled.value = newValue
         mSocket?.emit("player:shuffle", newValue)
+        _toastMessage.value = if (newValue) "Shuffle enabled" else "Shuffle disabled"
     }
     
     fun cycleRepeatMode() {
@@ -372,6 +454,22 @@ object SocketManager {
         val newMode = modes[(currentIndex + 1) % modes.size]
         _repeatMode.value = newMode
         mSocket?.emit("player:repeat", newMode)
+        _toastMessage.value = when (newMode) {
+            "off" -> "Repeat off"
+            "all" -> "Repeat all"
+            "one" -> "Repeat one"
+            else -> ""
+        }
+    }
+    
+    fun playFromQueue(index: Int) {
+        val queueList = _queue.value
+        if (index < 0 || index >= queueList.size) {
+            _toastMessage.value = "Invalid song index"
+            return
+        }
+        _toastMessage.value = "Playing: ${queueList[index].title}"
+        mSocket?.emit("queue:play", index)
     }
 
     fun sendMessage(text: String, username: String) {
@@ -383,6 +481,10 @@ object SocketManager {
     }
     
     fun addToQueue(song: Song) {
+        if (mSocket?.connected() != true) {
+            _toastMessage.value = "Not connected to server"
+            return
+        }
         val data = JSONObject()
         data.put("id", song.id)
         data.put("title", song.title)
@@ -427,8 +529,12 @@ object SocketManager {
                     )
                 }
                 _searchResults.value = songs
+                if (songs.isEmpty()) {
+                    _toastMessage.value = "No results found for \"$query\""
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
+                _toastMessage.value = "Search failed: ${e.message ?: "Network error"}"
             } finally {
                 _isSearching.value = false
             }
@@ -445,6 +551,13 @@ object SocketManager {
             try {
                 val response = apiService.getRooms()
                 val rooms = response.mapIndexed { index, item ->
+                    val queueSongs = mutableListOf<String>()
+                    item.currentSong?.let { 
+                        queueSongs.add("${it.title} - ${it.artist}")
+                    }
+                    item.queuePreview?.take(3)?.forEach { song ->
+                        queueSongs.add("${song.title} - ${song.artist}")
+                    }
                     Room(
                         id = index,
                         roomId = item.id,
@@ -452,8 +565,8 @@ object SocketManager {
                         vibe = item.vibe,
                         username = "Host",
                         roomName = item.name,
-                        songs = if (item.currentSong != null) listOf("${item.currentSong.title} - ${item.currentSong.artist}") else emptyList(),
-                        totalSongs = 0,
+                        songs = queueSongs.take(3),
+                        totalSongs = item.totalSongs,
                         userCount = item.userCount,
                         flagColor = Color(0xFFE3F2FD)
                     )
@@ -461,6 +574,7 @@ object SocketManager {
                 _publicRooms.value = rooms
             } catch (e: Exception) {
                 e.printStackTrace()
+                _toastMessage.value = "Failed to load rooms"
             } finally {
                 _isLoadingRooms.value = false
             }
@@ -484,14 +598,22 @@ object SocketManager {
         }
     }
     
-    suspend fun createRoom(name: String, vibe: String, isPrivate: Boolean, hostUsername: String): String? {
+    suspend fun createRoom(name: String, vibe: String, isPrivate: Boolean, hostUsername: String, countryFlag: String = "🌐"): String? {
         return try {
-            val response = apiService.createRoom(CreateRoomRequest(name, vibe, isPrivate, hostUsername))
+            val response = apiService.createRoom(CreateRoomRequest(name, vibe, isPrivate, hostUsername, countryFlag))
             response.roomId
         } catch (e: Exception) {
             e.printStackTrace()
-            // Generate local 6-digit ID as fallback
             String.format("%06d", (100000..999999).random())
+        }
+    }
+    
+    suspend fun getCountryFlag(): String {
+        return try {
+            val response = apiService.getLocation()
+            response.countryFlag
+        } catch (e: Exception) {
+            "🌐"
         }
     }
 }

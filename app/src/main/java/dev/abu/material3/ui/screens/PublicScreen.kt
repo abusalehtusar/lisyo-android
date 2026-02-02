@@ -225,29 +225,81 @@ fun RoomCard(room: Room, onJoin: (String) -> Unit) {
 
             Spacer(modifier = Modifier.size(16.dp))
 
-            // Current Song (if any)
+            // Queue Preview with Timeline Design
             if (room.songs.isNotEmpty()) {
-                Column {
-                    room.songs.take(1).forEach { song ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.MusicNote,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Queue",
+                        fontFamily = jetbrainsMono,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (room.totalSongs > 0) {
+                        Text(
+                            text = "${room.totalSongs} songs",
+                            fontFamily = inter,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Timeline design for songs
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    // Timeline line
+                    Column(
+                        modifier = Modifier.width(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        room.songs.forEachIndexed { index, _ ->
+                            // Dot
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(
+                                        if (index == 0) MaterialTheme.colorScheme.primary 
+                                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                        CircleShape
+                                    )
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            // Line (except for last item)
+                            if (index < room.songs.size - 1) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(2.dp)
+                                        .height(16.dp)
+                                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Song titles
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        room.songs.forEachIndexed { index, song ->
                             Text(
                                 text = song,
                                 fontFamily = inter,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                style = if (index == 0) MaterialTheme.typography.bodyMedium 
+                                        else MaterialTheme.typography.bodySmall,
+                                color = if (index == 0) MaterialTheme.colorScheme.onSurface 
+                                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                fontWeight = if (index == 0) FontWeight.Medium else FontWeight.Normal
                             )
                         }
                     }
                 }
+                
                 Spacer(modifier = Modifier.size(16.dp))
             }
 
@@ -291,6 +343,26 @@ fun RoomCard(room: Room, onJoin: (String) -> Unit) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.tertiary
                     )
+                }
+                
+                // Total songs in queue
+                if (room.totalSongs > 0) {
+                    Spacer(Modifier.width(24.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.LibraryMusic,
+                            contentDescription = "Queue",
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "${room.totalSongs}",
+                            fontFamily = jetbrainsMono,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
                 }
             }
 
