@@ -157,7 +157,7 @@ fun MainScreen() {
                             Text(
                                 text = label,
                                 fontFamily = inter,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Normal,
                                 fontSize = 16.sp
                             )
                         }
@@ -184,12 +184,144 @@ fun MainScreen() {
     }
 }
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.foundation.shape.CircleShape
+
+data class Room(
+    val id: Int,
+    val countryFlag: String,
+    val countryName: String,
+    val username: String,
+    val content: String,
+    val flagColor: Color
+)
+
+val dummyRooms = listOf(
+    Room(1, "🇺🇸", "USA", "dj_mike", "Listening to: Lofi Hip Hop Radio 24/7", Color(0xFFE3F2FD)),
+    Room(2, "🇯🇵", "Japan", "sakura_beats", "Streaming: Tokyo City Pop Classics", Color(0xFFFFEBEE)),
+    Room(3, "🇧🇷", "Brazil", "rio_vibes", "Playing: Bossa Nova Jazz", Color(0xFFE8F5E9)),
+    Room(4, "🇬🇧", "UK", "brit_pop_fan", "Jamming to: 90s Britpop Essentials", Color(0xFFF3E5F5)),
+    Room(5, "🇩🇪", "Germany", "techno_hans", "Live: Berlin Underground Techno", Color(0xFFFFF3E0)),
+    Room(6, "🇰🇷", "Korea", "kpop_stan", "Listening to: NewJeans - Super Shy", Color(0xFFFCE4EC))
+)
+
 @Composable
 fun PublicScreen() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Filled.Public, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.size(16.dp))
-        Text("Public Rooms", fontFamily = jetbrainsMono, style = MaterialTheme.typography.titleLarge)
+    LazyColumn(
+        contentPadding = PaddingValues(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(dummyRooms) { room ->
+            RoomCard(room)
+        }
+    }
+}
+
+@Composable
+fun RoomCard(room: Room) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Header: Logo + Info
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Circular Logo Container
+                Surface(
+                    shape = CircleShape,
+                    color = room.flagColor,
+                    modifier = Modifier.size(48.dp),
+                    contentColor = Color.Black
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(text = room.countryFlag, fontSize = 24.sp)
+                    }
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${room.countryName} / ${room.username}",
+                            fontFamily = inter,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.size(12.dp))
+
+            // Content
+            Text(
+                text = room.content,
+                fontFamily = inter,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.size(16.dp))
+
+            // Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = { /* Join action */ },
+                    shape = RoundedCornerShape(50), // Capsule
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = "Join", fontFamily = inter, fontWeight = FontWeight.SemiBold)
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                FilledIconButton(
+                    onClick = { /* Report action */ },
+                    shape = CircleShape,
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Flag,
+                        contentDescription = "Report",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }
 
