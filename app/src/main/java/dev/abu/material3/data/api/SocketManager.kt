@@ -258,6 +258,7 @@ object SocketManager {
                         when {
                             isPlaying && !wasPlaying -> audioPlayer?.resume()
                             !isPlaying && wasPlaying -> audioPlayer?.pause()
+                            else -> Unit
                         }
                     }
                 }
