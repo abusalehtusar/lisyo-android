@@ -79,7 +79,8 @@ class MainActivity : ComponentActivity() {
 }
 
 val jetbrainsMono = FontFamily(
-    Font(R.font.jetbrains_mono_regular)
+    Font(R.font.jetbrains_mono_regular, FontWeight.Normal),
+    Font(R.font.jetbrains_mono_semibold, FontWeight.SemiBold)
 )
 
 val inter = FontFamily(
@@ -298,8 +299,8 @@ fun RoomCard(room: Room) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "${room.countryName} / ${room.username}",
-                            fontFamily = inter,
-                            fontWeight = FontWeight.Bold,
+                            fontFamily = jetbrainsMono,
+                            fontWeight = FontWeight.SemiBold,
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
