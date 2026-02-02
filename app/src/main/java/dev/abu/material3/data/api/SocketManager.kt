@@ -127,13 +127,19 @@ object SocketManager {
         socket.on("chat:new") { args ->
             if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
-                val message = ChatMessage(
-                    id = data.optString("id", UUID.randomUUID().toString()),
-                    senderName = data.optString("senderName", "Unknown"),
-                    text = data.optString("text", ""),
-                    timestamp = data.optLong("timestamp", System.currentTimeMillis())
-                )
+                val message = parseMessage(data)
                 _messages.value = _messages.value + message
+            }
+        }
+        
+        socket.on("chat:history") { args ->
+            if (args.isNotEmpty()) {
+                val jsonArray = args[0] as JSONArray
+                val newMessages = ArrayList<ChatMessage>()
+                for (i in 0 until jsonArray.length()) {
+                    newMessages.add(parseMessage(jsonArray.getJSONObject(i)))
+                }
+                _messages.value = newMessages
             }
         }
 
@@ -250,6 +256,15 @@ object SocketManager {
             e.printStackTrace()
             return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
         }
+    }
+
+    private fun parseMessage(data: JSONObject): ChatMessage {
+        return ChatMessage(
+            id = data.optString("id", UUID.randomUUID().toString()),
+            senderName = data.optString("senderName", "Unknown"),
+            text = data.optString("text", ""),
+            timestamp = data.optLong("timestamp", System.currentTimeMillis())
+        )
     }
 
     private fun parseSong(json: JSONObject): Song {

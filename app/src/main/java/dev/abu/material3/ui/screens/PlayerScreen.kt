@@ -125,7 +125,7 @@ fun PlayerScreen(
             when (selectedTab) {
                 0 -> SongsTab(playerState.isPlaying, playerState.currentSong, queue)
                 1 -> ChatTab(messages)
-                2 -> SessionTab(users)
+                2 -> SessionTab(users, roomName)
             }
         }
     }
@@ -330,20 +330,52 @@ fun ChatTab(messages: List<ChatMessage>) {
     }
 }
 
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+
 @Composable
-fun SessionTab(users: List<dev.abu.material3.data.model.SessionUser>) {
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        items(users) { user ->
+fun SessionTab(users: List<dev.abu.material3.data.model.SessionUser>, roomName: String) {
+    val clipboardManager = LocalClipboardManager.current
+    
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        // Room Info Card
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp))
-                Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(user.username, fontFamily = jetbrainsMono, fontWeight = FontWeight.Bold)
-                    if (user.isHost) {
-                        Text("HOST", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                    Text("Room ID", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                    Text(roomName, fontFamily = jetbrainsMono, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                }
+                IconButton(onClick = { 
+                    clipboardManager.setText(AnnotatedString(roomName)) 
+                }) {
+                    Icon(Icons.Default.ContentCopy, "Copy ID", tint = MaterialTheme.colorScheme.onTertiaryContainer)
+                }
+            }
+        }
+        
+        Text("Active Users (${users.size})", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
+
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            items(users) { user ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Person, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(user.username, fontFamily = jetbrainsMono, fontWeight = FontWeight.Bold)
+                        if (user.isHost) {
+                            Text("HOST", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                        }
                     }
                 }
             }
