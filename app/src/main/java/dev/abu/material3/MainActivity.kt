@@ -40,14 +40,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import dev.abu.material3.ui.theme.LisyoTheme
-import dev.abu.material3.ui.theme.OceanDark
-import dev.abu.material3.ui.theme.OceanPrimary
-import dev.abu.material3.ui.theme.OceanSecondary
-import dev.abu.material3.ui.theme.DeepBlue
-import dev.abu.material3.ui.theme.SoftWhite
-import dev.abu.material3.ui.theme.BorderLight
-import dev.abu.material3.ui.theme.PurpleSelected
-import dev.abu.material3.ui.theme.PurpleBrighter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,10 +133,10 @@ fun MainScreen() {
                     onClick = { selectedIndex = index },
                     selected = isSelected,
                     colors = SegmentedButtonDefaults.colors(
-                        activeContainerColor = PurpleSelected,
-                        activeContentColor = Color.White,
-                        inactiveContainerColor = PurpleBrighter,
-                        inactiveContentColor = PurpleSelected,
+                        activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        activeContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainer, // Use surfaceContainer for better contrast than pure surface
+                        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
                         activeBorderColor = Color.Transparent,
                         inactiveBorderColor = Color.Transparent
                     ),
