@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 private val OceanColorScheme = darkColorScheme(
     primary = OceanPrimary,
@@ -26,8 +27,6 @@ private val OceanColorScheme = darkColorScheme(
     onBackground = OnOceanDark,
     onSurface = OnOceanDark,
 )
-
-import androidx.core.view.WindowCompat
 
 @Composable
 fun LisyoTheme(
