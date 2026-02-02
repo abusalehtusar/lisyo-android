@@ -16,10 +16,10 @@ object YouTubePlayerExtractor {
         .build()
 
     private val clients = listOf(
+        // IOS: Modern version - Most reliable currently
+        Triple("IOS", "19.29.1", "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc"),
         // ANDROID_MUSIC: Modern version
         Triple("ANDROID_MUSIC", "5.44.54", "AIzaSyAOghZGza2MQSZkY_zfZ370N-PUdXEo8AI"),
-        // IOS: Modern version
-        Triple("IOS", "19.29.1", "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc"),
         // TVHTML5: Standard
         Triple("TVHTML5", "7.20230405.08.01", "AIzaSyDCU8hByM-4DrUqRUYnGn-3llEO78bcxq8"),
         // WEB_REMIX: YT Music Web
