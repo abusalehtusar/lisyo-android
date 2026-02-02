@@ -37,7 +37,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import dev.abu.material3.ui.theme.LisyoTheme
+import dev.abu.material3.ui.theme.OceanDark
+import dev.abu.material3.ui.theme.OceanPrimary
+import dev.abu.material3.ui.theme.OceanSecondary
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,12 +91,13 @@ fun MainScreen() {
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .padding(end = 8.dp)
-                    .size(32.dp)
+                    .size(44.dp)
             )
             Text(
                 text = "Lisyo",
                 fontFamily = jetbrainsMono,
                 style = MaterialTheme.typography.headlineSmall,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -102,10 +107,25 @@ fun MainScreen() {
             modifier = Modifier.fillMaxWidth()
         ) {
             options.forEachIndexed { index, label ->
+                val isSelected = index == selectedIndex
+                val shape = if (isSelected) RoundedCornerShape(50) else SegmentedButtonDefaults.itemShape(index = index, count = options.size)
+                
                 SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                    shape = shape,
                     onClick = { selectedIndex = index },
-                    selected = index == selectedIndex,
+                    selected = isSelected,
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = OceanPrimary,
+                        activeContentColor = OceanDark,
+                        inactiveContainerColor = OceanSecondary,
+                        inactiveContentColor = OceanDark,
+                        activeBorderColor = OceanPrimary,
+                        inactiveBorderColor = OceanSecondary
+                    ),
+                    border = SegmentedButtonDefaults.borderStroke(
+                        color = if (isSelected) OceanPrimary else OceanSecondary,
+                        width = 1.dp
+                    ),
                     label = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -123,7 +143,7 @@ fun MainScreen() {
                             )
                         }
                     },
-                    icon = {} // Disable the default checkmark icon to match reference style more closely or use custom
+                    icon = {} 
                 )
             }
         }
