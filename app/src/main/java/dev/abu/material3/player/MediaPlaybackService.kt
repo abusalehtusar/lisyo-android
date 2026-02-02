@@ -147,8 +147,7 @@ class MediaPlaybackService : MediaSessionService() {
                 urlCache[mediaId] = Pair(resolvedUrl, System.currentTimeMillis() + CACHE_DURATION)
                 dataSpec.withUri(android.net.Uri.parse(resolvedUrl))
             } else {
-                Logger.logError(TAG, "CRITICAL: Could not resolve stream for $mediaId. Returning dummy URL to avoid protocol error.")
-                // Return a dummy URL that will cause an HTTP error instead of a MalformedURLException protocol error
+                Logger.logError(TAG, "CRITICAL: Could not resolve stream for $mediaId.")
                 dataSpec.withUri(android.net.Uri.parse("https://localhost/error_resolving_$mediaId"))
             }
         }
@@ -158,7 +157,18 @@ class MediaPlaybackService : MediaSessionService() {
         if (videoId == "test") return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
         if (videoId.isBlank()) return null
         
-        // 1. Try NewPipe Extractor
+        // 1. Try Direct TVHTML5 Extraction (Most reliable currently)
+        try {
+            val url = YouTubePlayerExtractor.getAudioUrl(videoId)
+            if (url != null) {
+                Logger.logInfo(TAG, "TVHTML5 extraction successful for $videoId")
+                return url
+            }
+        } catch (e: Exception) {
+            Logger.logError(TAG, "TVHTML5 extraction failed for $videoId", e)
+        }
+
+        // 2. Try NewPipe Extractor
         try {
             val url = "https://www.youtube.com/watch?v=$videoId"
             val extractor = ServiceList.YouTube.getStreamExtractor(url)
@@ -173,7 +183,7 @@ class MediaPlaybackService : MediaSessionService() {
             Logger.logError(TAG, "NewPipe failed for $videoId: ${e.message}")
         }
         
-        // 2. Try Backend Fallback
+        // 3. Try Backend Fallback
         try {
             Logger.logInfo(TAG, "Trying backend fallback for $videoId")
             val response = SocketManager.getApiService().getStreamUrl(videoId)
@@ -185,7 +195,7 @@ class MediaPlaybackService : MediaSessionService() {
             Logger.logError(TAG, "Backend fallback failed for $videoId")
         }
         
-        // 3. Try Piped API Instances directly
+        // 4. Try Piped API Instances directly
         for (instance in pipedInstances) {
             try {
                 Logger.logInfo(TAG, "Trying Piped instance $instance for $videoId")
