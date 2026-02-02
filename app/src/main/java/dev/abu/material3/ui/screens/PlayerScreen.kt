@@ -232,13 +232,11 @@ fun SongsTab(
                         onClick = { 
                             // Click adds to queue and clears search
                             SocketManager.addToQueue(song)
-                            SocketManager.showToast("Added to queue: ${song.title}")
                             searchQuery = ""
                             SocketManager.clearSearchResults()
                         },
                         onAddToQueue = {
                             SocketManager.addToQueue(song)
-                            SocketManager.showToast("Added to queue: ${song.title}")
                         }
                     )
                 }
