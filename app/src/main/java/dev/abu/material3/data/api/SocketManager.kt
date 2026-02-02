@@ -16,8 +16,8 @@ object SocketManager {
                 opts.forceNew = true
                 opts.reconnection = true
                 
-                // Using the provided URL and Port
-                mSocket = IO.socket("https://lisyo-backend-production.up.railway.app:8080", opts)
+                // Using the provided URL (Standard HTTPS port 443)
+                mSocket = IO.socket("https://lisyo-backend-production.up.railway.app", opts)
             } catch (e: URISyntaxException) {
                 e.printStackTrace()
             }
