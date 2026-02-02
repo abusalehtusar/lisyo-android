@@ -48,48 +48,50 @@ import androidx.compose.ui.unit.sp
 import dev.abu.material3.ui.theme.inter
 import dev.abu.material3.ui.theme.jetbrainsMono
 
+import androidx.compose.material.icons.filled.GraphicEq
+
 data class Room(
     val id: Int,
     val countryFlag: String,
     val vibe: String,
     val username: String,
+    val roomName: String,
     val songs: List<String>,
     val totalSongs: Int,
     val userCount: Int,
-    val totalDuration: String,
     val flagColor: Color
 )
 
 val dummyRooms = listOf(
     Room(
-        1, "🇺🇸", "Lofi", "dj_mike",
+        1, "🇺🇸", "Lofi", "dj_mike", "Chill Study Session",
         listOf("Blinding Lights - The Weeknd", "As It Was - Harry Styles", "Stay - Justin Bieber"),
-        42, 128, "2h 15m", Color(0xFFE3F2FD)
+        42, 128, Color(0xFFE3F2FD)
     ),
     Room(
-        2, "🇯🇵", "City Pop", "sakura_beats",
+        2, "🇯🇵", "City Pop", "sakura_beats", "Tokyo Night Drive",
         listOf("Plastic Love - Mariya Takeuchi", "Stay With Me - Miki Matsubara", "Mayonaka no Door - Miki Matsubara"),
-        24, 85, "1h 45m", Color(0xFFFFEBEE)
+        24, 85, Color(0xFFFFEBEE)
     ),
     Room(
-        3, "🇧🇷", "Bossa Nova", "rio_vibes",
+        3, "🇧🇷", "Bossa Nova", "rio_vibes", "Copacabana Sunset",
         listOf("Garota de Ipanema - Tom Jobim", "Mas Que Nada - Jorge Ben Jor", "Águas de Março - Elis Regina"),
-        30, 64, "1h 30m", Color(0xFFE8F5E9)
+        30, 64, Color(0xFFE8F5E9)
     ),
     Room(
-        4, "🇬🇧", "Britpop", "brit_pop_fan",
+        4, "🇬🇧", "Britpop", "brit_pop_fan", "90s Anthems",
         listOf("Wonderwall - Oasis", "Bitter Sweet Symphony - The Verve", "Don't Look Back in Anger - Oasis"),
-        55, 210, "3h 20m", Color(0xFFF3E5F5)
+        55, 210, Color(0xFFF3E5F5)
     ),
     Room(
-        5, "🇩🇪", "Techno", "techno_hans",
+        5, "🇩🇪", "Techno", "techno_hans", "Berlin Underground",
         listOf("The Model - Kraftwerk", "Das Boot - U96", "Sonne - Rammstein"),
-        18, 45, "1h 10m", Color(0xFFFFF3E0)
+        18, 45, Color(0xFFFFF3E0)
     ),
     Room(
-        6, "🇰🇷", "K-Pop", "kpop_stan",
+        6, "🇰🇷", "K-Pop", "kpop_stan", "Seoul Vibe",
         listOf("Super Shy - NewJeans", "Dynamite - BTS", "Fancy - TWICE"),
-        60, 350, "4h 00m", Color(0xFFFCE4EC)
+        60, 350, Color(0xFFFCE4EC)
     )
 )
 
@@ -143,7 +145,7 @@ fun RoomCard(room: Room) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "${room.vibe} / ${room.username}",
+                            text = "${room.username} / ${room.roomName}",
                             fontFamily = jetbrainsMono,
                             fontWeight = FontWeight.SemiBold,
                             style = MaterialTheme.typography.titleMedium,
@@ -193,7 +195,7 @@ fun RoomCard(room: Room) {
 
             Spacer(modifier = Modifier.size(16.dp))
 
-            // Stats Row (Songs, Users, Time)
+            // Stats Row (Songs, Users, Vibe)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center, // Centered
@@ -237,17 +239,17 @@ fun RoomCard(room: Room) {
 
                 Spacer(Modifier.width(20.dp))
 
-                // Duration
+                // Vibe
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = "Duration",
+                        imageVector = Icons.Default.GraphicEq,
+                        contentDescription = "Vibe",
                         tint = MaterialTheme.colorScheme.tertiary,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = room.totalDuration,
+                        text = room.vibe,
                         fontFamily = jetbrainsMono,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.tertiary
