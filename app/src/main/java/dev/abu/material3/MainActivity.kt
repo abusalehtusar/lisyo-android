@@ -90,6 +90,8 @@ val inter = FontFamily(
     Font(R.font.inter_light, FontWeight.Light)
 )
 
+import androidx.compose.material3.ButtonDefaults
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
@@ -106,7 +108,7 @@ fun MainScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.size(8.dp)) // Reduced top spacing
         
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -349,7 +351,7 @@ fun RoomCard(room: Room) {
             // Stats Row (Songs, Users, Time)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.Center, // Centered
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Total Songs
@@ -357,49 +359,53 @@ fun RoomCard(room: Room) {
                     Icon(
                         imageVector = Icons.Default.LibraryMusic,
                         contentDescription = "Total Songs",
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = "${room.totalSongs} Songs",
                         fontFamily = jetbrainsMono,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.secondary
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
+
+                Spacer(Modifier.width(20.dp))
 
                 // Total Users
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Users",
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = "${room.userCount}",
                         fontFamily = jetbrainsMono,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.secondary
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
+
+                Spacer(Modifier.width(20.dp))
 
                 // Duration
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Schedule,
                         contentDescription = "Duration",
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(
                         text = room.totalDuration,
                         fontFamily = jetbrainsMono,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.secondary
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -415,7 +421,9 @@ fun RoomCard(room: Room) {
                 Button(
                     onClick = { /* Join action */ },
                     shape = RoundedCornerShape(50), // Capsule
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(ButtonDefaults.MinHeight)
                 ) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
@@ -433,12 +441,13 @@ fun RoomCard(room: Room) {
                     shape = CircleShape,
                     colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                    )
+                    ),
+                    modifier = Modifier.size(ButtonDefaults.MinHeight) // Match Join button height
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Flag,
                         contentDescription = "Report",
-                        tint = Color.Red // Red flag icon
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
