@@ -76,6 +76,17 @@ object SocketManager {
     private var _currentUsername = MutableStateFlow("")
     val currentUsername = _currentUsername.asStateFlow()
     
+    // YouTube Login Cookies
+    private val _youtubeCookie = MutableStateFlow<String?>(null)
+    val youtubeCookie = _youtubeCookie.asStateFlow()
+    
+    private var prefs: android.content.SharedPreferences? = null
+
+    fun setYoutubeCookie(cookie: String?) {
+        _youtubeCookie.value = cookie
+        prefs?.edit()?.putString("yt_cookie", cookie)?.apply()
+    }
+    
     // Track current playing song ID to avoid redundant updates
     private var currentVideoId: String? = null
 
@@ -100,6 +111,10 @@ object SocketManager {
     private var audioPlayer: dev.abu.material3.player.AudioPlayer? = null
 
     fun init(context: android.content.Context) {
+        if (prefs == null) {
+            prefs = context.getSharedPreferences("lisyo_prefs", android.content.Context.MODE_PRIVATE)
+            _youtubeCookie.value = prefs?.getString("yt_cookie", null)
+        }
         if (audioPlayer == null) {
             audioPlayer = dev.abu.material3.player.AudioPlayer(context.applicationContext)
             audioPlayer?.initialize()

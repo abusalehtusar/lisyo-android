@@ -15,9 +15,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import dev.abu.material3.data.api.SocketManager
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onLoginClick: () -> Unit) {
+    val youtubeCookie by SocketManager.youtubeCookie.collectAsState()
+    val isLoggedIn = youtubeCookie != null
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -33,10 +40,18 @@ fun SettingsScreen(onBack: () -> Unit, onLoginClick: () -> Unit) {
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             ListItem(
                 headlineContent = { Text("YouTube Login") },
-                supportingContent = { Text("Login to access your library and playlists") },
+                supportingContent = { 
+                    Text(if (isLoggedIn) "Logged in successfully" else "Login to access your library and playlists")
+                },
                 trailingContent = {
-                    IconButton(onClick = onLoginClick) {
-                        Text("Login")
+                    if (isLoggedIn) {
+                        IconButton(onClick = { SocketManager.setYoutubeCookie(null) }) {
+                            Text("Logout", color = MaterialTheme.colorScheme.error)
+                        }
+                    } else {
+                        IconButton(onClick = onLoginClick) {
+                            Text("Login")
+                        }
                     }
                 }
             )

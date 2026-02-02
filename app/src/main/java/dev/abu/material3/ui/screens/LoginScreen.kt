@@ -48,7 +48,7 @@ fun LoginScreen(onDismiss: () -> Unit) {
                                 val cookies = CookieManager.getInstance().getCookie(url)
                                 if (cookies != null && cookies.contains("SAPISID")) {
                                     // Found login session
-                                    // In a real app we would store this
+                                    SocketManager.setYoutubeCookie(cookies)
                                     onDismiss()
                                 }
                             }

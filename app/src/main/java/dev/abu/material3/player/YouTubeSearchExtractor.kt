@@ -38,9 +38,14 @@ object YouTubeSearchExtractor {
             }
 
             val request = Request.Builder()
-                .url("https://www.youtube.com/youtubei/v1/search?key=$API_KEY")
+                .url("https://music.youtube.com/youtubei/v1/search?key=$API_KEY")
                 .header("User-Agent", USER_AGENT)
                 .header("Content-Type", "application/json")
+                .apply {
+                    dev.abu.material3.data.api.SocketManager.youtubeCookie.value?.let {
+                        header("Cookie", it)
+                    }
+                }
                 .post(json.toString().toRequestBody("application/json".toMediaType()))
                 .build()
 

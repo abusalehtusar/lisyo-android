@@ -18,6 +18,8 @@ object YouTubePlayerExtractor {
     private val clients = listOf(
         // ANDROID_TESTSUITE: Very reliable for audio
         Triple("ANDROID_TESTSUITE", "1.9", "AIzaSyAOghZGza2MQSZkY_zfZ370N-PUdXEo8AI"),
+        // WEB_REMIX: Standard YT Music client
+        Triple("WEB_REMIX", "1.20220606.03.00", "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30"),
         // WEB_EMBEDDED_PLAYER: Good for restricted videos
         Triple("WEB_EMBEDDED_PLAYER", "1.20230626.01.00", "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX3"),
         // ANDROID_VR: Sometimes bypasses bot detection
@@ -53,6 +55,11 @@ object YouTubePlayerExtractor {
                     .url("https://www.youtube.com/youtubei/v1/player?key=$apiKey")
                     .header("User-Agent", USER_AGENT)
                     .header("Content-Type", "application/json")
+                    .apply {
+                        dev.abu.material3.data.api.SocketManager.youtubeCookie.value?.let {
+                            header("Cookie", it)
+                        }
+                    }
                     .post(json.toString().toRequestBody("application/json".toMediaType()))
                     .build()
 
