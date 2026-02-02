@@ -315,7 +315,7 @@ object SocketManager {
                         id = item.videoId,
                         title = item.name,
                         artist = item.artist?.name ?: "Unknown",
-                        duration = (item.duration ?: 0) * 1000, // API likely returns seconds? or ms? assuming seconds if small, need to verify. YoutubeMusicApi usually returns milliseconds or seconds. Let's assume ms if > 10000. Wait, `youtube-music-api` returns `duration` in milliseconds usually.
+                        duration = item.duration ?: 0,
                         coverUrl = item.thumbnails?.lastOrNull()?.url
                     )
                 }
