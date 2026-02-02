@@ -289,15 +289,15 @@ fun RoomCard(room: Room) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Circular Logo Container (Bigger size: 56.dp)
+                // Circular Logo Container (Reduced size: 40.dp)
                 Surface(
                     shape = CircleShape,
                     color = room.flagColor,
-                    modifier = Modifier.size(56.dp),
+                    modifier = Modifier.size(40.dp),
                     contentColor = Color.Black
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(text = room.countryFlag, fontSize = 28.sp)
+                        Text(text = room.countryFlag, fontSize = 20.sp)
                     }
                 }
                 
@@ -310,7 +310,7 @@ fun RoomCard(room: Room) {
                             fontFamily = jetbrainsMono,
                             fontWeight = FontWeight.SemiBold,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
                         )
                     }
                 }
