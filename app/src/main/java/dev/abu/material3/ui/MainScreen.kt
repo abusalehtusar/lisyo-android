@@ -61,7 +61,7 @@ fun MainScreen() {
         
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = 19.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.GraphicEq,
