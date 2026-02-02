@@ -40,6 +40,13 @@ class MainActivity : ComponentActivity() {
         val serviceIntent = Intent(this, MediaPlaybackService::class.java)
         startService(serviceIntent)
         
+        // Initialize NewPipe
+        try {
+            org.schabi.newpipe.extractor.NewPipe.init(dev.abu.material3.player.NewPipeDownloader())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
         SocketManager.init(this)
         SocketManager.establishConnection()
         

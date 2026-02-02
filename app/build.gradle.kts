@@ -149,6 +149,9 @@ dependencies {
     implementation("androidx.media3:media3-common:1.2.0")
     implementation("androidx.media3:media3-session:1.2.0")
     
+    // NewPipe Extractor
+    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.24.4")
+    
     // Networking
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")

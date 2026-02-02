@@ -28,7 +28,8 @@ import com.google.common.util.concurrent.ListenableFuture
 import dev.abu.material3.MainActivity
 import dev.abu.material3.data.api.SocketManager
 import kotlinx.coroutines.runBlocking
-import org.json.JSONObject
+import org.schabi.newpipe.extractor.ServiceList
+import org.schabi.newpipe.extractor.stream.StreamInfo
 
 @OptIn(UnstableApi::class)
 class MediaPlaybackService : MediaSessionService() {
@@ -114,9 +115,9 @@ class MediaPlaybackService : MediaSessionService() {
                 return@Factory dataSpec
             }
             
-            // Resolve videoId to stream URL
+            // Resolve videoId to stream URL using NewPipe Extractor
             val resolvedUrl = runBlocking {
-                Log.d(TAG, "Fetching stream URL for: $mediaId")
+                Log.d(TAG, "Fetching stream URL for: $mediaId via NewPipe")
                 getVideoStreamUrl(mediaId)
             }
             
@@ -135,49 +136,30 @@ class MediaPlaybackService : MediaSessionService() {
         if (videoId.isBlank()) return null
         
         try {
+            // Use NewPipe Extractor to get the stream URL
+            val url = "https://www.youtube.com/watch?v=$videoId"
+            val extractor = ServiceList.YouTube.getStreamExtractor(url)
+            extractor.fetchPage()
+            
+            // Get the best audio stream
+            val audioStreams = extractor.audioStreams
+            if (audioStreams.isNotEmpty()) {
+                // Return the URL of the first (usually best) audio stream
+                return audioStreams[0].url
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "NewPipe resolution failed for $videoId: ${e.message}")
+        }
+        
+        // Fallback to backend API if NewPipe fails
+        try {
+            Log.d(TAG, "Trying backend fallback for $videoId")
             val response = SocketManager.getApiService().getStreamUrl(videoId)
             if (response.url.isNotBlank()) {
                 return response.url
             }
         } catch (e: Exception) {
-            Log.e(TAG, "API resolution failed for $videoId: ${e.message}")
-        }
-        
-        // Fallback to direct Piped API call
-        try {
-            Log.d(TAG, "Trying fallback for $videoId")
-            val url = java.net.URL("https://pipedapi.kavin.rocks/streams/$videoId")
-            val connection = url.openConnection() as java.net.HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Accept", "application/json")
-            connection.connectTimeout = 10000
-            connection.readTimeout = 10000
-            
-            if (connection.responseCode == 200) {
-                val reader = java.io.BufferedReader(java.io.InputStreamReader(connection.inputStream))
-                val responseText = reader.readText()
-                reader.close()
-                
-                val json = JSONObject(responseText)
-                val audioStreams = json.optJSONArray("audioStreams")
-                if (audioStreams != null && audioStreams.length() > 0) {
-                    var bestUrl = ""
-                    var bestBitrate = 0
-                    for (i in 0 until audioStreams.length()) {
-                        val stream = audioStreams.getJSONObject(i)
-                        val bitrate = stream.optInt("bitrate", 0)
-                        if (bitrate > bestBitrate) {
-                            bestBitrate = bitrate
-                            bestUrl = stream.optString("url", "")
-                        }
-                    }
-                    if (bestUrl.isNotEmpty()) return bestUrl
-                }
-            } else {
-                Log.e(TAG, "Fallback failed: HTTP ${connection.responseCode}")
-            }
-        } catch (e2: Exception) {
-            Log.e(TAG, "Fallback failed for $videoId: ${e2.message}")
+            Log.e(TAG, "Backend fallback failed: ${e.message}")
         }
         
         return null
