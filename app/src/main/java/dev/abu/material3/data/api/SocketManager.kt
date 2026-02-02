@@ -27,17 +27,23 @@ object SocketManager {
     private var mSocket: Socket? = null
     private val scope = CoroutineScope(Dispatchers.IO)
     
-    // API Service
+    // API Services
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://lisyo-backend-production-1acf.up.railway.app")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
-        
     private val apiService = retrofit.create(LisyoApiService::class.java)
+
+    private val youtubeRetrofit = Retrofit.Builder()
+        .baseUrl("https://youtubei.googleapis.com/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+    private val youtubeService = youtubeRetrofit.create(YouTubeApiService::class.java)
 
     // State Flows
     private val _playerState = MutableStateFlow(PlayerState())
     val playerState = _playerState.asStateFlow()
+
 
     private val _queue = MutableStateFlow<List<Song>>(emptyList())
     val queue = _queue.asStateFlow()
@@ -191,31 +197,59 @@ object SocketManager {
         )
         
         // Trigger Audio Player
-        if (song != null) {
-            val videoId = song.id // Assuming ID is videoId
-            val streamUrl = getVideoStreamUrl(videoId)
-            audioPlayer?.play(streamUrl, position, isPlaying)
-        } else {
-            audioPlayer?.pause()
+        scope.launch {
+            if (song != null) {
+                // Check if already playing this exact song to avoid re-fetching
+                if (audioPlayer?.isPlaying?.value == true && _playerState.value.currentSong?.id == song.id && isPlaying) {
+                     // Just seek if drift is large? AudioPlayer handles this check locally too.
+                     // But we need to verify if the URL is expired or valid.
+                }
+                
+                val videoId = song.id
+                val streamUrl = getVideoStreamUrl(videoId)
+                
+                withContext(Dispatchers.Main) {
+                     audioPlayer?.play(streamUrl, position, isPlaying)
+                }
+            } else {
+                withContext(Dispatchers.Main) {
+                    audioPlayer?.pause()
+                }
+            }
         }
     }
     
-    // MOCK / DEMO Implementation for Stream URL
-    private fun getVideoStreamUrl(videoId: String): String {
-        // In a real app, use an extractor or backend proxy.
-        // For this demo, we can use a direct MP3 if the ID matches a known one, 
-        // or try a generic Invidious link (which might fail without real extraction).
-        
-        // FALLBACK: A reliable MP3 for testing if the videoId is "test" or generic
+    // Real YouTube Stream Extractor (Basic)
+    private suspend fun getVideoStreamUrl(videoId: String): String {
+        // Fallback for testing
         if (videoId == "test") return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
         
-        // Attempt to use a proxy or just return a dummy if we can't extract.
-        // Let's use a public Invidious instance that serves raw streams if possible.
-        // This is flaky. Ideally, the backend should send the streamUrl.
-        // I will return a dummy stream for now to ensure the APP DOES NOT CRASH, 
-        // and the user can hear *something* (e.g. "We are simulating this song").
-        
-        return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
+        try {
+            val request = PlayerRequest(
+                videoId = videoId,
+                context = ContextData(
+                    client = ClientData(
+                        clientName = "ANDROID_TESTSUITE"
+                    )
+                )
+            )
+            val response = youtubeService.getPlayerResponse(request)
+            
+            // Look for audio-only stream in adaptiveFormats
+            val audioFormat = response.streamingData?.adaptiveFormats?.find { 
+                it.mimeType?.startsWith("audio") == true 
+            }
+            
+            // Fallback to formats if adaptive not found
+            val format = audioFormat ?: response.streamingData?.formats?.find {
+                it.mimeType?.startsWith("audio") == true
+            }
+            
+            return format?.url ?: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" // Fallback if extraction fails
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+        }
     }
 
     private fun parseSong(json: JSONObject): Song {
