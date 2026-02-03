@@ -11,6 +11,5 @@ local.properties
 backend/
 *_temp/
 core
-youtubeapi/
 errors.log
 INTEGRATION_COMPLETE.md
