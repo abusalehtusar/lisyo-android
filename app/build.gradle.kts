@@ -53,14 +53,14 @@ fun incrementVersionIndex() {
 }
 
 android {
-    namespace = "dev.abu.material3"
+    namespace = "dev.abu.lisyo"
     compileSdk = 34
 
     val currentVersionName = getVersionNameWithSuffix()
     val currentVersionCode = getVersionCodeValue()
 
     defaultConfig {
-        applicationId = "dev.abu.material3"
+        applicationId = "dev.abu.lisyo"
         minSdk = 24
         targetSdk = 34
         versionCode = currentVersionCode
@@ -78,7 +78,7 @@ android {
         val variant = this
         variant.outputs.all {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName = "Material3-${variant.versionName}-${variant.name}.apk"
+            output.outputFileName = "Lisyo-${variant.versionName}-${variant.name}.apk"
         }
     }
 

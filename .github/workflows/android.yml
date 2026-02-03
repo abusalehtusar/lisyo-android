@@ -29,5 +29,5 @@ jobs:
     - name: Upload Dev APK
       uses: actions/upload-artifact@v4
       with:
-        name: Material3-Dev-${{ github.run_number }}
+        name: Lisyo-Dev-${{ github.run_number }}
         path: app/build/outputs/apk/debug/*.apk

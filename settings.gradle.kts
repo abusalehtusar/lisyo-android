@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Material3App"
+rootProject.name = "Lisyo"
 include(":app")
