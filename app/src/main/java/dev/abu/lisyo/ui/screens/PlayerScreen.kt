@@ -117,6 +117,13 @@ fun PlayerScreen(
         SocketManager.joinRoom(roomId, username)
     }
 
+    // Auto-leave if room is terminated
+    LaunchedEffect(playerState.roomId) {
+        if (playerState.roomId.isEmpty() && roomId.isNotEmpty()) {
+            onLeave()
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = Modifier.navigationBarsPadding(),
