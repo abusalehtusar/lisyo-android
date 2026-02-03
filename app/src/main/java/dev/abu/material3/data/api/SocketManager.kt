@@ -162,8 +162,16 @@ object SocketManager {
             if (args.isNotEmpty()) {
                 val jsonArray = args[0] as JSONArray
                 val newQueue = ArrayList<Song>()
+                val currentQueueMap = _queue.value.associateBy { it.id }
+                
                 for (i in 0 until jsonArray.length()) {
-                    newQueue.add(parseSong(jsonArray.getJSONObject(i)))
+                    var s = parseSong(jsonArray.getJSONObject(i))
+                    if (s.duration == 0L) {
+                        currentQueueMap[s.id]?.duration?.let {
+                            if (it > 0L) s = s.copy(duration = it)
+                        }
+                    }
+                    newQueue.add(s)
                 }
                 _queue.value = newQueue
             }
@@ -243,12 +251,22 @@ object SocketManager {
         
         if (position < 0) position = 0
 
-        val song = if (songJson != null) parseSong(songJson) else null
+        var song = if (songJson != null) parseSong(songJson) else null
+        
+        // Preserve duration if already known
+        if (song != null && song.duration == 0L) {
+            val current = _playerState.value.currentSong
+            if (current?.id == song.id && current.duration > 0L) {
+                song = song.copy(duration = current.duration)
+            }
+        }
+
         val wasPlaying = _playerState.value.isPlaying
         
         _playerState.value = PlayerState(
             currentSong = song,
             isPlaying = isPlaying,
+            isLoading = _playerState.value.isLoading,
             currentPosition = position,
             lastSyncTime = now
         )
@@ -440,23 +458,33 @@ object SocketManager {
 
     fun updateSongDuration(videoId: String, durationMs: Long) {
         val state = _playerState.value
+        var changed = false
         if (state.currentSong?.id == videoId && state.currentSong.duration == 0L) {
             _playerState.value = state.copy(
                 currentSong = state.currentSong.copy(duration = durationMs)
             )
+            changed = true
         }
         
         // Also update in queue if present
         val currentQueue = _queue.value.toMutableList()
-        var updated = false
+        var updatedInQueue = false
         for (i in currentQueue.indices) {
             if (currentQueue[i].id == videoId && currentQueue[i].duration == 0L) {
                 currentQueue[i] = currentQueue[i].copy(duration = durationMs)
-                updated = true
+                updatedInQueue = true
             }
         }
-        if (updated) {
+        if (updatedInQueue) {
             _queue.value = currentQueue
+            changed = true
+        }
+
+        if (changed) {
+            val data = JSONObject()
+            data.put("videoId", videoId)
+            data.put("duration", durationMs)
+            mSocket?.emit("player:duration", data)
         }
     }
 
