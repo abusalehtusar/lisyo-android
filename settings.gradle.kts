@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Material3App"
 include(":app")
+include(":youtubeapi")

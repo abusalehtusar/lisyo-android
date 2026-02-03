@@ -118,6 +118,15 @@ object SocketManager {
         if (audioPlayer == null) {
             audioPlayer = dev.abu.material3.player.AudioPlayer(context.applicationContext)
             audioPlayer?.initialize()
+            
+            // Listen to audio player loading state
+            scope.launch {
+                audioPlayer?.isLoading?.collect { isLoading ->
+                    val current = _playerState.value
+                    _playerState.value = current.copy(isLoading = isLoading)
+                }
+            }
+        }
         }
     }
 
@@ -216,6 +225,7 @@ object SocketManager {
     
     private fun updatePlayerState(data: JSONObject) {
         val isPlaying = data.optBoolean("isPlaying", false)
+        val isLoading = data.optBoolean("isLoading", false) // Server can send loading state
         val startTime = data.optLong("startTime", 0L)
         val songJson = data.optJSONObject("currentSong")
         
@@ -232,9 +242,13 @@ object SocketManager {
         val song = if (songJson != null) parseSong(songJson) else null
         val wasPlaying = _playerState.value.isPlaying
         
+        // Set loading state when song changes
+        val songChanged = song?.id != _playerState.value.currentSong?.id
+        
         _playerState.value = PlayerState(
             currentSong = song,
             isPlaying = isPlaying,
+            isLoading = isLoading || songChanged, // Show loading on song change
             currentPosition = position,
             lastSyncTime = now
         )
@@ -442,7 +456,7 @@ object SocketManager {
         scope.launch {
             _isSearching.value = true
             try {
-                val songs = dev.abu.material3.player.YouTubeSearchExtractor.search(query)
+                val songs = dev.abu.material3.player.YouTubeMusicSearchService.search(query)
                 _searchResults.value = songs
             } catch (e: Exception) {
                 e.printStackTrace()

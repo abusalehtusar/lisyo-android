@@ -26,6 +26,7 @@ data class SessionUser(
 data class PlayerState(
     val currentSong: Song? = null,
     val isPlaying: Boolean = false,
+    val isLoading: Boolean = false, // Loading state for buffering/loading
     val currentPosition: Long = 0L,
     val lastSyncTime: Long = 0L // System time when position was updated
 )

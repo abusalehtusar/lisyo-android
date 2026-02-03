@@ -399,19 +399,33 @@ fun SongsTab(
                         Icon(Icons.Default.SkipPrevious, "Previous")
                     }
                     
-                    // Play/Pause
-                    IconButton(
-                        onClick = { if (isPlaying) SocketManager.pause() else SocketManager.resume() },
-                        modifier = Modifier
-                            .size(56.dp)
-                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    // Play/Pause with loading indicator
+                    Box(
+                        modifier = Modifier.size(56.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            "Play/Pause",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(32.dp)
-                        )
+                        IconButton(
+                            onClick = { if (isPlaying) SocketManager.pause() else SocketManager.resume() },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                            enabled = !playerState.isLoading
+                        ) {
+                            if (playerState.isLoading) {
+                                CircularProgressIndicator(
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(32.dp),
+                                    strokeWidth = 3.dp
+                                )
+                            } else {
+                                Icon(
+                                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    "Play/Pause",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
                     }
                     
                     // Next

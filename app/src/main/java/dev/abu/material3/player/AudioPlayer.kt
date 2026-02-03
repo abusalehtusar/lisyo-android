@@ -26,6 +26,9 @@ class AudioPlayer(private val context: Context) {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying = _isPlaying.asStateFlow()
     
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+    
     private var pendingMediaId: String? = null
     private var pendingPosition: Long = 0L
     private var pendingPlayWhenReady: Boolean = true
@@ -43,6 +46,10 @@ class AudioPlayer(private val context: Context) {
                 mediaController?.addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(isPlaying: Boolean) {
                         _isPlaying.value = isPlaying
+                    }
+                    
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        _isLoading.value = playbackState == Player.STATE_BUFFERING
                     }
                 })
                 
