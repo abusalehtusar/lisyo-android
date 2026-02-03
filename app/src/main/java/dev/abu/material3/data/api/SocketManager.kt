@@ -17,6 +17,7 @@ import java.net.URISyntaxException
 import java.util.UUID
 
 import dev.abu.material3.ui.screens.Room
+import dev.abu.material3.ui.screens.getVibeColor
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -555,7 +556,7 @@ object SocketManager {
                         songs = queueSongs.take(5), // Show up to 5 songs in preview
                         totalSongs = item.totalSongs,
                         userCount = item.userCount,
-                        flagColor = Color(0xFFE3F2FD)
+                        flagColor = getVibeColor(item.vibe)
                     )
                 }
                 _publicRooms.value = rooms

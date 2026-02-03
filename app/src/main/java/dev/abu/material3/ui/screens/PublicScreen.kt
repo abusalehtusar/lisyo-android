@@ -74,6 +74,19 @@ data class Room(
     val flagColor: Color
 )
 
+fun getVibeColor(vibe: String): Color {
+    return when (vibe.lowercase()) {
+        "lofi" -> Color(0xFFF1F8E9)
+        "pop" -> Color(0xFFE3F2FD)
+        "jazz" -> Color(0xFFFFF3E0)
+        "rock" -> Color(0xFFFFEBEE)
+        "techno" -> Color(0xFFF3E5F5)
+        "k-pop" -> Color(0xFFE1F5FE)
+        "classical" -> Color(0xFFFAFAFA)
+        else -> Color(0xFFE3F2FD)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PublicScreen(onJoin: (String, String) -> Unit) {
