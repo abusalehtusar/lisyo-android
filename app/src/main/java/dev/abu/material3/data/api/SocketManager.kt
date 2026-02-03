@@ -18,6 +18,7 @@ import java.util.UUID
 
 import dev.abu.material3.ui.screens.Room
 import dev.abu.material3.ui.screens.getVibeColor
+import dev.abu.material3.utils.Logger
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
