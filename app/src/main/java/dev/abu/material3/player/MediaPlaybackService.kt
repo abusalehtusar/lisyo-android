@@ -36,7 +36,7 @@ class MediaPlaybackService : MediaSessionService() {
     
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
-    private val urlCache = ConcurrentHashMap<String, Pair<String, Long>>() // videoId -> (url, expiry)
+    private val urlCache = ConcurrentHashMap<String, Triple<String, Long, Long>>() // videoId -> (url, expiry, durationMs)
     private val CACHE_DURATION = 30 * 60 * 1000 // 30 minutes
     
     companion object {
@@ -128,6 +128,9 @@ class MediaPlaybackService : MediaSessionService() {
             val cached = urlCache[mediaId]
             if (cached != null && System.currentTimeMillis() < cached.second) {
                 Logger.logInfo(TAG, "Using cached URL for $mediaId")
+                if (cached.third > 0) {
+                    SocketManager.updateSongDuration(mediaId, cached.third)
+                }
                 return@Factory dataSpec.withUri(android.net.Uri.parse(cached.first))
             }
             
@@ -147,17 +150,17 @@ class MediaPlaybackService : MediaSessionService() {
             
             val resolvedUrl = resolvedData?.streamUrl
             val expiry = resolvedData?.streamExpiresInSeconds?.toLong()?.times(1000) ?: CACHE_DURATION.toLong()
+            val resolvedDuration = resolvedData?.videoDetails?.lengthSeconds?.toLongOrNull()?.times(1000) ?: 0L
             
             if (resolvedUrl != null) {
                 Logger.logInfo(TAG, "Resolved $mediaId to: ${resolvedUrl.take(50)}...")
                 
                 // Update duration if missing
-                val durationSeconds = resolvedData.videoDetails?.lengthSeconds?.toLongOrNull() ?: 0L
-                if (durationSeconds > 0) {
-                    SocketManager.updateSongDuration(mediaId, durationSeconds * 1000)
+                if (resolvedDuration > 0) {
+                    SocketManager.updateSongDuration(mediaId, resolvedDuration)
                 }
 
-                urlCache[mediaId] = Pair(resolvedUrl, System.currentTimeMillis() + (expiry - 60000)) // Buffer 1 min
+                urlCache[mediaId] = Triple(resolvedUrl, System.currentTimeMillis() + (expiry - 60000), resolvedDuration) // Buffer 1 min
                 dataSpec.withUri(android.net.Uri.parse(resolvedUrl))
             } else {
                 Logger.logError(TAG, "CRITICAL: Could not resolve stream for $mediaId.")
