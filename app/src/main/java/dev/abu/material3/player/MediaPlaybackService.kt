@@ -140,6 +140,13 @@ class MediaPlaybackService : MediaSessionService() {
             
             if (resolvedUrl != null) {
                 Logger.logInfo(TAG, "Resolved $mediaId to: ${resolvedUrl.take(50)}...")
+                
+                // Update duration if missing
+                val durationSeconds = resolvedData.videoDetails?.lengthSeconds?.toLongOrNull() ?: 0L
+                if (durationSeconds > 0) {
+                    SocketManager.updateSongDuration(mediaId, durationSeconds * 1000)
+                }
+
                 urlCache[mediaId] = Pair(resolvedUrl, System.currentTimeMillis() + (expiry - 60000)) // Buffer 1 min
                 dataSpec.withUri(android.net.Uri.parse(resolvedUrl))
             } else {

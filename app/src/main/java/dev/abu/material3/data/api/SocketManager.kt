@@ -121,6 +121,17 @@ object SocketManager {
         if (audioPlayer == null) {
             audioPlayer = dev.abu.material3.player.AudioPlayer(context.applicationContext)
             audioPlayer?.initialize()
+            
+            scope.launch {
+                audioPlayer?.isLoading?.collect { loading ->
+                    val currentPos = getCurrentPosition()
+                    _playerState.value = _playerState.value.copy(
+                        isLoading = loading,
+                        currentPosition = currentPos,
+                        lastSyncTime = System.currentTimeMillis()
+                    )
+                }
+            }
         }
     }
 
@@ -223,7 +234,7 @@ object SocketManager {
         val songJson = data.optJSONObject("currentSong")
         
         val now = System.currentTimeMillis()
-        val serverNow = now - timeOffset
+        val serverNow = now + timeOffset
         var position = if (isPlaying && startTime > 0) {
             serverNow - startTime
         } else {
@@ -339,7 +350,12 @@ object SocketManager {
         
         if (!_playerState.value.isPlaying) return // Already paused
         
-        _playerState.value = _playerState.value.copy(isPlaying = false)
+        val currentPos = getCurrentPosition()
+        _playerState.value = _playerState.value.copy(
+            isPlaying = false,
+            currentPosition = currentPos,
+            lastSyncTime = now
+        )
         mSocket?.emit("player:pause")
         audioPlayer?.pause()
     }
@@ -352,7 +368,10 @@ object SocketManager {
         if (_playerState.value.currentSong == null) return
         if (_playerState.value.isPlaying) return // Already playing
         
-        _playerState.value = _playerState.value.copy(isPlaying = true)
+        _playerState.value = _playerState.value.copy(
+            isPlaying = true,
+            lastSyncTime = now
+        )
         mSocket?.emit("player:resume")
         audioPlayer?.resume()
     }
@@ -415,6 +434,28 @@ object SocketManager {
         mSocket?.emit("queue:remove", index)
     }
 
+    fun updateSongDuration(videoId: String, durationMs: Long) {
+        val state = _playerState.value
+        if (state.currentSong?.id == videoId && state.currentSong.duration == 0L) {
+            _playerState.value = state.copy(
+                currentSong = state.currentSong.copy(duration = durationMs)
+            )
+        }
+        
+        // Also update in queue if present
+        val currentQueue = _queue.value.toMutableList()
+        var updated = false
+        for (i in currentQueue.indices) {
+            if (currentQueue[i].id == videoId && currentQueue[i].duration == 0L) {
+                currentQueue[i] = currentQueue[i].copy(duration = durationMs)
+                updated = true
+            }
+        }
+        if (updated) {
+            _queue.value = currentQueue
+        }
+    }
+
     suspend fun ping(): Boolean {
         return try {
             apiService.getRooms()
@@ -434,7 +475,7 @@ object SocketManager {
     
     fun getCurrentPosition(): Long {
         val state = _playerState.value
-        if (!state.isPlaying) return state.currentPosition
+        if (!state.isPlaying || state.isLoading) return state.currentPosition
         
         val elapsed = System.currentTimeMillis() - state.lastSyncTime
         return state.currentPosition + elapsed

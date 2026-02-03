@@ -334,32 +334,43 @@ fun SongsTab(
                 
                 Spacer(Modifier.height(12.dp))
                 
-                val duration = currentSong?.duration ?: 1L
+                val duration = (currentSong?.duration ?: 0L).coerceAtLeast(1L)
                 val progressFraction = if (isSeeking) {
                     seekPosition
                 } else {
-                    (currentProgress.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                    val fraction = currentProgress.toFloat() / duration.toFloat()
+                    if (fraction.isNaN()) 0f else fraction.coerceIn(0f, 1f)
                 }
                 
                 // Seekable Progress Slider
-                Slider(
-                    value = progressFraction,
-                    onValueChange = { 
-                        isSeeking = true
-                        seekPosition = it
-                    },
-                    onValueChangeFinished = {
-                        val newPosition = (seekPosition * duration).toLong()
-                        SocketManager.seekTo(newPosition)
-                        currentProgress = newPosition
-                        isSeeking = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary
+                Box(contentAlignment = Alignment.Center) {
+                    Slider(
+                        value = progressFraction,
+                        onValueChange = { 
+                            isSeeking = true
+                            seekPosition = it
+                        },
+                        onValueChangeFinished = {
+                            val newPosition = (seekPosition * duration).toLong()
+                            SocketManager.seekTo(newPosition)
+                            currentProgress = newPosition
+                            isSeeking = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = SliderDefaults.colors(
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                            activeTrackColor = MaterialTheme.colorScheme.primary
+                        )
                     )
-                )
+                    
+                    if (playerState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
                 
                 // Time labels
                 Row(

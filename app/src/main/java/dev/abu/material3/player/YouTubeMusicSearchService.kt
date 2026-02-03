@@ -31,6 +31,9 @@ object YouTubeMusicSearchService {
             result.summaries.forEach { summary ->
                 summary.items.forEach { item ->
                     if (item is SongItem) {
+                        if (item.duration == null || item.duration == 0) {
+                            Logger.logInfo(TAG, "Song without duration: ${item.title}")
+                        }
                         songs.add(
                             Song(
                                 id = item.id,
@@ -49,6 +52,9 @@ object YouTubeMusicSearchService {
                 val songResult = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG).getOrNull()
                 songResult?.items?.forEach { item ->
                     if (item is SongItem) {
+                        if (item.duration == null || item.duration == 0) {
+                            Logger.logInfo(TAG, "Song without duration: ${item.title}")
+                        }
                         songs.add(
                             Song(
                                 id = item.id,
