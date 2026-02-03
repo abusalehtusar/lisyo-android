@@ -388,8 +388,9 @@ fun SongsTab(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    val displayProgress = if (isSeeking) (seekPosition * duration).toLong() else currentProgress
                     Text(
-                        formatDuration(if (isSeeking) (seekPosition * duration).toLong() else currentProgress),
+                        formatDuration(displayProgress),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = jetbrainsMono
                     )
