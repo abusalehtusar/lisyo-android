@@ -84,6 +84,10 @@ import dev.abu.material3.ui.theme.inter
 import dev.abu.material3.ui.theme.jetbrainsMono
 import kotlinx.coroutines.delay
 
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.lazy.itemsIndexed
+
 @Composable
 fun PlayerScreen(
     roomId: String,
@@ -114,6 +118,7 @@ fun PlayerScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        modifier = Modifier.imePadding().navigationBarsPadding(),
         topBar = {
             Column(
                 modifier = Modifier

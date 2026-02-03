@@ -388,6 +388,10 @@ object SocketManager {
     
     fun seekTo(positionMs: Long) {
         mSocket?.emit("player:seek", positionMs)
+        _playerState.value = _playerState.value.copy(
+            currentPosition = positionMs,
+            lastSyncTime = System.currentTimeMillis()
+        )
         audioPlayer?.seekTo(positionMs)
     }
     
@@ -510,7 +514,7 @@ object SocketManager {
                     item.currentSong?.let { 
                         queueSongs.add("${it.title} - ${it.artist}")
                     }
-                    item.queuePreview?.take(3)?.forEach { song ->
+                    item.queuePreview?.forEach { song ->
                         queueSongs.add("${song.title} - ${song.artist}")
                     }
                     Room(
@@ -520,7 +524,7 @@ object SocketManager {
                         vibe = item.vibe,
                         username = "Host",
                         roomName = item.name,
-                        songs = queueSongs.take(3),
+                        songs = queueSongs.take(5), // Show up to 5 songs in preview
                         totalSongs = item.totalSongs,
                         userCount = item.userCount,
                         flagColor = Color(0xFFE3F2FD)

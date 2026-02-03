@@ -94,6 +94,16 @@ class MediaPlaybackService : MediaSessionService() {
                         }
                     }
                     
+                    override fun onPositionDiscontinuity(
+                        oldPosition: Player.PositionInfo,
+                        newPosition: Player.PositionInfo,
+                        reason: Int
+                    ) {
+                        if (reason == Player.DISCONTINUITY_REASON_SEEK) {
+                            Logger.logInfo(TAG, "Seek detected: ${newPosition.positionMs}ms")
+                        }
+                    }
+
                     override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                         Logger.logError(TAG, "Player error: ${error.message}", error)
                     }
