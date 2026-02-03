@@ -85,6 +85,7 @@ object SocketManager {
     fun setYoutubeCookie(cookie: String?) {
         _youtubeCookie.value = cookie
         prefs?.edit()?.putString("yt_cookie", cookie)?.apply()
+        dev.abu.material3.innertube.YouTube.cookie = cookie
     }
     
     // Track current playing song ID to avoid redundant updates
@@ -113,7 +114,9 @@ object SocketManager {
     fun init(context: android.content.Context) {
         if (prefs == null) {
             prefs = context.getSharedPreferences("lisyo_prefs", android.content.Context.MODE_PRIVATE)
-            _youtubeCookie.value = prefs?.getString("yt_cookie", null)
+            val cookie = prefs?.getString("yt_cookie", null)
+            _youtubeCookie.value = cookie
+            dev.abu.material3.innertube.YouTube.cookie = cookie
         }
         if (audioPlayer == null) {
             audioPlayer = dev.abu.material3.player.AudioPlayer(context.applicationContext)
