@@ -118,7 +118,7 @@ fun PlayerScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = Modifier.imePadding().navigationBarsPadding(),
+        modifier = Modifier.navigationBarsPadding(),
         topBar = {
             Column(
                 modifier = Modifier
@@ -269,13 +269,33 @@ fun SongsTab(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Queue", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                Text("${queue.size} songs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                if (searchQuery.isEmpty()) {
+                    Text("${queue.size} songs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                }
             }
             Spacer(Modifier.height(8.dp))
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Show current song first if exists
+                if (currentSong != null) {
+                    item {
+                        Text("Now Playing", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(4.dp))
+                        QueueItem(
+                            song = currentSong,
+                            index = -1, // Special index for current song
+                            isCurrentSong = true,
+                            onClick = { /* Already playing */ },
+                            onRemove = { /* Cannot remove now playing from here directly */ }
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text("Next in Queue", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(4.dp))
+                    }
+                }
+
                 items(queue.size) { index ->
                     val song = queue[index]
                     val isCurrentSong = currentSong?.id == song.id
@@ -499,14 +519,23 @@ fun QueueItem(song: Song, index: Int, isCurrentSong: Boolean, onClick: () -> Uni
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            "${index + 1}",
-            fontFamily = jetbrainsMono,
-            color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer 
-                    else MaterialTheme.colorScheme.outline,
-            modifier = Modifier.width(24.dp)
-        )
-        Spacer(Modifier.width(8.dp))
+        if (index >= 0) {
+            Text(
+                "${index + 1}",
+                fontFamily = jetbrainsMono,
+                color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer 
+                        else MaterialTheme.colorScheme.outline,
+                modifier = Modifier.width(24.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+        } else if (isCurrentSong) {
+            Icon(
+                Icons.Default.PlayArrow,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp).padding(end = 8.dp)
+            )
+        }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 song.title, 
@@ -565,6 +594,7 @@ fun ChatTab(messages: List<ChatMessage>, username: String) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
