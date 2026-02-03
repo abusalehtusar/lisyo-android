@@ -7,22 +7,22 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface LisyoApiService {
-    @GET("/api/search")
+    @GET("api/search")
     suspend fun search(@Query("q") query: String): SearchResponse
 
-    @GET("/api/rooms")
+    @GET("api/rooms")
     suspend fun getRooms(): List<RoomResponse>
     
-    @GET("/api/stream/{videoId}")
+    @GET("api/stream/{videoId}")
     suspend fun getStreamUrl(@Path("videoId") videoId: String): StreamResponse
     
-    @GET("/api/generate-names")
+    @GET("api/generate-names")
     suspend fun generateNames(): GenerateNamesResponse
     
-    @POST("/api/rooms")
+    @POST("api/rooms")
     suspend fun createRoom(@Body request: CreateRoomRequest): CreateRoomResponse
     
-    @GET("/api/location")
+    @GET("api/location")
     suspend fun getLocation(): LocationResponse
 }
 

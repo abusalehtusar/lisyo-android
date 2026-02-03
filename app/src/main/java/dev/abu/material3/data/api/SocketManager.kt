@@ -27,7 +27,7 @@ object SocketManager {
     private var mSocket: Socket? = null
     private val scope = CoroutineScope(Dispatchers.IO)
     
-    private const val BASE_URL = "https://lisyo-backend-production-1acf.up.railway.app"
+    private const val BASE_URL = "https://lisyo-backend-production-1acf.up.railway.app/"
     
     // API Services
     private val retrofit = Retrofit.Builder()
