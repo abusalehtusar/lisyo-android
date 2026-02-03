@@ -156,8 +156,7 @@ fun PlayerScreen(
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             when (selectedTab) {
                 0 -> SongsTab(
-                    isPlaying = playerState.isPlaying,
-                    currentSong = playerState.currentSong,
+                    playerState = playerState,
                     queue = queue,
                     shuffleEnabled = shuffleEnabled,
                     repeatMode = repeatMode
@@ -171,12 +170,13 @@ fun PlayerScreen(
 
 @Composable
 fun SongsTab(
-    isPlaying: Boolean,
-    currentSong: Song?,
+    playerState: dev.abu.material3.data.model.PlayerState,
     queue: List<Song>,
     shuffleEnabled: Boolean,
     repeatMode: String
 ) {
+    val isPlaying = playerState.isPlaying
+    val currentSong = playerState.currentSong
     var searchQuery by remember { mutableStateOf("") }
     var currentProgress by remember { mutableLongStateOf(0L) }
     var isSeeking by remember { mutableStateOf(false) }
