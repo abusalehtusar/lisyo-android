@@ -19,9 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Numbers
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -35,11 +33,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,40 +47,15 @@ import androidx.compose.ui.unit.sp
 import dev.abu.lisyo.data.api.SocketManager
 import dev.abu.lisyo.ui.theme.inter
 import dev.abu.lisyo.ui.theme.jetbrainsMono
-import kotlinx.coroutines.launch
+import android.text.format.DateUtils
 
 @Composable
 fun JoinScreen(onJoin: (String, String) -> Unit) {
+    val username by SocketManager.currentUsername.collectAsState()
+    val historyItems by SocketManager.joinHistory.collectAsState()
     var roomCode by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var isGenerating by remember { mutableStateOf(true) }
     var isJoining by remember { mutableStateOf(false) }
     
-    val scope = rememberCoroutineScope()
-
-    val historyItems = listOf(
-        Pair("123456", "2h ago"),
-        Pair("789012", "Yesterday"),
-        Pair("345678", "3 days ago")
-    )
-    
-    // Generate random username on first load
-    LaunchedEffect(Unit) {
-        isGenerating = true
-        val (_, generatedUsername) = SocketManager.generateNames()
-        username = generatedUsername
-        isGenerating = false
-    }
-    
-    fun regenerateUsername() {
-        scope.launch {
-            isGenerating = true
-            val (_, generatedUsername) = SocketManager.generateNames()
-            username = generatedUsername
-            isGenerating = false
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -119,44 +91,6 @@ fun JoinScreen(onJoin: (String, String) -> Unit) {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-
-                Spacer(modifier = Modifier.size(24.dp))
-                
-                // Username Input
-                Text(
-                    text = "Identity",
-                    fontFamily = jetbrainsMono,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Your Alias", fontFamily = inter) },
-                    placeholder = { Text("e.g. Cool-Panda", fontFamily = inter) },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    trailingIcon = {
-                        if (isGenerating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            IconButton(onClick = { regenerateUsername() }) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Randomize")
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    )
-                )
 
                 Spacer(modifier = Modifier.size(24.dp))
 
@@ -230,84 +164,95 @@ fun JoinScreen(onJoin: (String, String) -> Unit) {
             }
         }
 
-        Spacer(modifier = Modifier.size(24.dp))
+        if (historyItems.isNotEmpty()) {
+            Spacer(modifier = Modifier.size(24.dp))
 
-        // Recent History Section
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.History,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Recent History",
-                fontFamily = jetbrainsMono,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.tertiary
-            )
-        }
-
-        Spacer(modifier = Modifier.size(12.dp))
-
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            // Recent History Section
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
             ) {
-                historyItems.forEachIndexed { index, item ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { 
-                                roomCode = item.first
-                            }
-                            .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = item.first,
-                            fontFamily = jetbrainsMono,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            letterSpacing = 2.sp
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Schedule,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Recent History",
+                    fontFamily = jetbrainsMono,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+
+            Spacer(modifier = Modifier.size(12.dp))
+
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    historyItems.forEachIndexed { index, item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { 
+                                    roomCode = item.roomId
+                                }
+                                .padding(vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                text = item.second,
-                                fontFamily = inter,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
+                                text = item.roomId,
+                                fontFamily = jetbrainsMono,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                letterSpacing = 2.sp
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = getRelativeTime(item.timestamp),
+                                    fontFamily = inter,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                        if (index < historyItems.size - 1) {
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                             )
                         }
-                    }
-                    if (index < historyItems.size - 1) {
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
                     }
                 }
             }
         }
     }
+}
+
+private fun getRelativeTime(timestamp: Long): String {
+    return DateUtils.getRelativeTimeSpanString(
+        timestamp,
+        System.currentTimeMillis(),
+        DateUtils.MINUTE_IN_MILLIS,
+        DateUtils.FORMAT_ABBREV_RELATIVE
+    ).toString()
 }

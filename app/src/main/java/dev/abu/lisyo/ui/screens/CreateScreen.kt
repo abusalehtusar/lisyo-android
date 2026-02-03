@@ -17,10 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
@@ -40,6 +38,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,7 +56,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun CreateScreen(onJoin: (String, String) -> Unit) {
-    var username by remember { mutableStateOf("") }
+    val username by SocketManager.currentUsername.collectAsState()
     var roomName by remember { mutableStateOf("") }
     var selectedGenre by remember { mutableStateOf("Lofi") }
     var isPrivate by remember { mutableStateOf(false) }
@@ -68,22 +67,20 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
     val scope = rememberCoroutineScope()
     val genres = listOf("Lofi", "Pop", "Jazz", "Rock", "Techno", "K-Pop", "Classical")
 
-    // Generate random names and get country flag on first load
+    // Generate random room name and get country flag on first load
     LaunchedEffect(Unit) {
         isGenerating = true
-        val (generatedRoom, generatedUsername) = SocketManager.generateNames()
+        val (generatedRoom, _) = SocketManager.generateNames()
         roomName = generatedRoom
-        username = generatedUsername
         countryFlag = SocketManager.getCountryFlag()
         isGenerating = false
     }
 
-    fun regenerateNames() {
+    fun regenerateRoomName() {
         scope.launch {
             isGenerating = true
-            val (generatedRoom, generatedUsername) = SocketManager.generateNames()
+            val (generatedRoom, _) = SocketManager.generateNames()
             roomName = generatedRoom
-            username = generatedUsername
             isGenerating = false
         }
     }
@@ -123,44 +120,6 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
 
                 Spacer(modifier = Modifier.size(24.dp))
 
-                // Username Input
-                Text(
-                    text = "Identity",
-                    fontFamily = jetbrainsMono,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Your Alias", fontFamily = inter) },
-                    placeholder = { Text("e.g. Cool-Panda", fontFamily = inter) },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    trailingIcon = {
-                        if (isGenerating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            IconButton(onClick = { regenerateNames() }) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Randomize")
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    )
-                )
-
-                Spacer(modifier = Modifier.size(24.dp))
-
                 // Room Name Input
                 Text(
                     text = "Room Details",
@@ -183,7 +142,7 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            IconButton(onClick = { regenerateNames() }) {
+                            IconButton(onClick = { regenerateRoomName() }) {
                                 Icon(Icons.Default.Refresh, contentDescription = "Randomize")
                             }
                         }

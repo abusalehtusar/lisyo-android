@@ -78,6 +78,10 @@ object SocketManager {
     private var _currentUsername = MutableStateFlow("")
     val currentUsername = _currentUsername.asStateFlow()
     
+    // Join History
+    private val _joinHistory = MutableStateFlow<List<RoomHistoryItem>>(emptyList())
+    val joinHistory = _joinHistory.asStateFlow()
+    
     // YouTube Login Cookies
     private val _youtubeCookie = MutableStateFlow<String?>(null)
     val youtubeCookie = _youtubeCookie.asStateFlow()
@@ -119,6 +123,24 @@ object SocketManager {
             val cookie = prefs?.getString("yt_cookie", null)
             _youtubeCookie.value = cookie
             dev.abu.lisyo.innertube.YouTube.cookie = cookie
+            
+            // Load persistent username
+            val savedUsername = prefs?.getString("username", "") ?: ""
+            _currentUsername.value = savedUsername
+
+            // Load join history
+            val historyJson = prefs?.getString("join_history", "[]") ?: "[]"
+            try {
+                val array = JSONArray(historyJson)
+                val history = mutableListOf<RoomHistoryItem>()
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    history.add(RoomHistoryItem(obj.getString("roomId"), obj.getLong("timestamp")))
+                }
+                _joinHistory.value = history
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
         if (audioPlayer == null) {
             audioPlayer = dev.abu.lisyo.player.AudioPlayer(context.applicationContext)
@@ -334,6 +356,7 @@ object SocketManager {
     
     fun setUsername(username: String) {
         _currentUsername.value = username
+        prefs?.edit()?.putString("username", username)?.apply()
     }
 
     // Actions
@@ -342,6 +365,29 @@ object SocketManager {
         _messages.value = emptyList() // Clear previous room's messages
         _queue.value = emptyList()
         _users.value = emptyList()
+
+        // Update Join History
+        val currentHistory = _joinHistory.value.toMutableList()
+        currentHistory.removeAll { it.roomId == roomName }
+        currentHistory.add(0, RoomHistoryItem(roomName, System.currentTimeMillis()))
+        if (currentHistory.size > 10) {
+            val trimmed = currentHistory.take(10)
+            _joinHistory.value = trimmed
+        } else {
+            _joinHistory.value = currentHistory
+        }
+        
+        // Persist History
+        scope.launch {
+            val array = JSONArray()
+            _joinHistory.value.forEach { 
+                val obj = JSONObject()
+                obj.put("roomId", it.roomId)
+                obj.put("timestamp", it.timestamp)
+                array.put(obj)
+            }
+            prefs?.edit()?.putString("join_history", array.toString())?.apply()
+        }
         
         val data = JSONObject()
         data.put("room", roomName)
@@ -606,4 +652,4 @@ object SocketManager {
             "🌐"
         }
     }
-}
+}data class RoomHistoryItem(val roomId: String, val timestamp: Long)
