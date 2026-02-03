@@ -240,13 +240,16 @@ fun SongsTab(
                     SongItem(
                         song = song,
                         onClick = { 
-                            // Click adds to queue and clears search
+                            // Add to queue and clear search
                             SocketManager.addToQueue(song)
                             searchQuery = ""
                             SocketManager.clearSearchResults()
                         },
                         onAddToQueue = {
+                            // Add to queue and clear search
                             SocketManager.addToQueue(song)
+                            searchQuery = ""
+                            SocketManager.clearSearchResults()
                         }
                     )
                 }
