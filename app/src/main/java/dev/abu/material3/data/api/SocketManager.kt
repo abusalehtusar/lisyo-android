@@ -555,7 +555,7 @@ object SocketManager {
                         vibe = item.vibe,
                         username = "Host",
                         roomName = item.name,
-                        songs = queueSongs.take(5), // Show up to 5 songs in preview
+                        songs = queueSongs.take(3), // Show exactly 3 songs in preview
                         totalSongs = item.totalSongs,
                         userCount = item.userCount,
                         flagColor = getVibeColor(item.vibe)
