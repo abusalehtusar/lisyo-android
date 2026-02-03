@@ -142,7 +142,7 @@ fun SettingsScreen(onBack: () -> Unit, onLoginClick: () -> Unit) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 fontFamily = jetbrainsMono,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp, bottom = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
             )
 
             ListItem(
