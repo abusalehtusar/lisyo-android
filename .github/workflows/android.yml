@@ -1,4 +1,5 @@
 # This workflow builds the developer (debug) version of the Lisyo Android app.
+# Note: This workflow is part of the automated CI/CD pipeline for Lisyo.
 name: Dev Build
 
 on:
