@@ -146,9 +146,9 @@ object SocketManager {
         socket.on("room:state") { args ->
              if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
-                updatePlayerState(data)
                 _shuffleEnabled.value = data.optBoolean("shuffleEnabled", false)
                 _repeatMode.value = data.optString("repeatMode", "off")
+                updatePlayerState(data)
              }
         }
 
@@ -276,7 +276,7 @@ object SocketManager {
             if (song != null) {
                 val videoId = song.id
                 
-                if (videoId != currentVideoId) {
+                if (videoId != currentVideoId || (isPlaying && !wasPlaying)) {
                     currentVideoId = videoId
                     withContext(Dispatchers.Main) {
                         audioPlayer?.play(videoId, position, isPlaying)
