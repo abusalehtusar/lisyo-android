@@ -538,6 +538,7 @@ object SocketManager {
             _isLoadingRooms.value = true
             try {
                 val response = apiService.getRooms()
+                Logger.logInfo("SocketManager", "Fetched ${response.size} rooms")
                 val rooms = response.mapIndexed { index, item ->
                     val queueSongs = mutableListOf<String>()
                     item.currentSong?.let { 
@@ -546,6 +547,7 @@ object SocketManager {
                     item.queuePreview?.forEach { song ->
                         queueSongs.add("${song.title} - ${song.artist}")
                     }
+                    Logger.logInfo("SocketManager", "Room ${item.id}: songs=${queueSongs.size}, total=${item.totalSongs}")
                     Room(
                         id = index,
                         roomId = item.id,
