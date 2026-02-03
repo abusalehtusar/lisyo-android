@@ -52,6 +52,7 @@ fun incrementVersionIndex() {
     }
 }
 
+// Debug build with separate applicationId
 android {
     namespace = "dev.abu.lisyo"
     compileSdk = 34
