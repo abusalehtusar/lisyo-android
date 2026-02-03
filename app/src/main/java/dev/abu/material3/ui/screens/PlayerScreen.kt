@@ -506,14 +506,22 @@ fun QueueItem(song: Song, index: Int, isCurrentSong: Boolean, onClick: () -> Uni
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            "${index + 1}",
-            fontFamily = jetbrainsMono,
-            color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer 
-                    else MaterialTheme.colorScheme.outline,
-            modifier = Modifier.width(24.dp)
-        )
-        Spacer(Modifier.width(8.dp))
+        if (isCurrentSong) {
+            Icon(
+                Icons.Default.MusicNote,
+                null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(24.dp)
+            )
+        } else {
+            Text(
+                "${index + 1}",
+                fontFamily = jetbrainsMono,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.width(24.dp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 song.title, 
@@ -530,14 +538,6 @@ fun QueueItem(song: Song, index: Int, isCurrentSong: Boolean, onClick: () -> Uni
                 maxLines = 1,
                 color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                         else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        if (isCurrentSong) {
-            Icon(
-                Icons.Default.MusicNote,
-                null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(20.dp).padding(end = 8.dp)
             )
         }
         IconButton(
