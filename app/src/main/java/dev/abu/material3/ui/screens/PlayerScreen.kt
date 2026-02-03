@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -281,24 +282,6 @@ fun SongsTab(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Show current song first if exists
-                if (currentSong != null) {
-                    item {
-                        Text("Now Playing", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.height(4.dp))
-                        QueueItem(
-                            song = currentSong,
-                            index = -1, // Special index for current song
-                            isCurrentSong = true,
-                            onClick = { /* Already playing */ },
-                            onRemove = { /* Cannot remove now playing from here directly */ }
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Text("Next in Queue", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.height(4.dp))
-                    }
-                }
-
                 items(queue.size) { index ->
                     val song = queue[index]
                     val isCurrentSong = currentSong?.id == song.id
@@ -522,23 +505,14 @@ fun QueueItem(song: Song, index: Int, isCurrentSong: Boolean, onClick: () -> Uni
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (index >= 0) {
-            Text(
-                "${index + 1}",
-                fontFamily = jetbrainsMono,
-                color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer 
-                        else MaterialTheme.colorScheme.outline,
-                modifier = Modifier.width(24.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-        } else if (isCurrentSong) {
-            Icon(
-                Icons.Default.PlayArrow,
-                null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp).padding(end = 8.dp)
-            )
-        }
+        Text(
+            "${index + 1}",
+            fontFamily = jetbrainsMono,
+            color = if (isCurrentSong) MaterialTheme.colorScheme.onPrimaryContainer 
+                    else MaterialTheme.colorScheme.outline,
+            modifier = Modifier.width(24.dp)
+        )
+        Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 song.title, 
@@ -562,6 +536,17 @@ fun QueueItem(song: Song, index: Int, isCurrentSong: Boolean, onClick: () -> Uni
                 Icons.Default.MusicNote,
                 null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp).padding(end = 8.dp)
+            )
+        }
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                Icons.Default.RemoveCircleOutline,
+                "Remove",
+                tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(20.dp)
             )
         }
