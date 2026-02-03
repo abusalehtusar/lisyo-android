@@ -442,7 +442,7 @@ object SocketManager {
         scope.launch {
             _isSearching.value = true
             try {
-                val songs = dev.abu.material3.player.YouTubeSearchExtractor.search(query)
+                val songs = dev.abu.material3.player.YouTubeMusicSearchService.search(query)
                 _searchResults.value = songs
             } catch (e: Exception) {
                 e.printStackTrace()

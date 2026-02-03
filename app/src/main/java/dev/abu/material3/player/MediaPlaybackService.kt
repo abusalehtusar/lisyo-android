@@ -103,8 +103,9 @@ class MediaPlaybackService : MediaSessionService() {
 
     private fun createDataSourceFactory(): DataSource.Factory {
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
             .setAllowCrossProtocolRedirects(true)
+
+        val connectivityManager = getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
 
         return ResolvingDataSource.Factory(httpDataSourceFactory) { dataSpec ->
             val mediaId = dataSpec.uri.toString()
@@ -121,19 +122,25 @@ class MediaPlaybackService : MediaSessionService() {
             }
             
             // Resolve videoId to stream URL
-            val resolvedUrl = try {
+            val resolvedData = try {
                 runBlocking {
                     Logger.logInfo(TAG, "Resolving: $mediaId")
-                    getVideoStreamUrl(mediaId)
+                    dev.abu.material3.utils.YTPlayerUtils.playerResponseForPlayback(
+                        mediaId,
+                        connectivityManager = connectivityManager
+                    ).getOrNull()
                 }
             } catch (e: Exception) {
                 Logger.logError(TAG, "runBlocking failed for $mediaId", e)
                 null
             }
             
+            val resolvedUrl = resolvedData?.streamUrl
+            val expiry = resolvedData?.streamExpiresInSeconds?.toLong()?.times(1000) ?: CACHE_DURATION.toLong()
+            
             if (resolvedUrl != null) {
                 Logger.logInfo(TAG, "Resolved $mediaId to: ${resolvedUrl.take(50)}...")
-                urlCache[mediaId] = Pair(resolvedUrl, System.currentTimeMillis() + CACHE_DURATION)
+                urlCache[mediaId] = Pair(resolvedUrl, System.currentTimeMillis() + (expiry - 60000)) // Buffer 1 min
                 dataSpec.withUri(android.net.Uri.parse(resolvedUrl))
             } else {
                 Logger.logError(TAG, "CRITICAL: Could not resolve stream for $mediaId.")
@@ -142,18 +149,6 @@ class MediaPlaybackService : MediaSessionService() {
         }
     }
 
-    private suspend fun getVideoStreamUrl(videoId: String): String? {
-        if (videoId == "test") return "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-        if (videoId.isBlank()) return null
-        
-        // Use Direct TVHTML5 Extraction (Most reliable currently)
-        return try {
-            YouTubePlayerExtractor.getAudioUrl(videoId)
-        } catch (e: Exception) {
-            Logger.logError(TAG, "TVHTML5 extraction failed for $videoId", e)
-            null
-        }
-    }
     
     private fun initializeMediaSession() {
         val sessionActivityIntent = Intent(this, MainActivity::class.java)
