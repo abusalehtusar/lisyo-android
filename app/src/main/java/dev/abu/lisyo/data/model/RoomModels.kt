@@ -24,6 +24,7 @@ data class SessionUser(
 )
 
 data class PlayerState(
+    val roomId: String = "",
     val currentSong: Song? = null,
     val isPlaying: Boolean = false,
     val isLoading: Boolean = false,

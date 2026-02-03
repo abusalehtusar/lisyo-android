@@ -44,7 +44,7 @@ import dev.abu.lisyo.ui.screens.CreateScreen
 import dev.abu.lisyo.ui.screens.JoinScreen
 import dev.abu.lisyo.ui.screens.LoginScreen
 import dev.abu.lisyo.ui.screens.PlayerScreen
-import dev.abu.lisyo.ui.screens.PublicScreen
+import dev.abu.lisyo.ui.screens.RoomsScreen
 import dev.abu.lisyo.ui.screens.SettingsScreen
 import dev.abu.lisyo.ui.theme.inter
 import dev.abu.lisyo.ui.theme.jetbrainsMono
@@ -104,7 +104,7 @@ fun HomeScreen(
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     
-    val options = listOf("Public", "Create", "Join")
+    val options = listOf("Rooms", "Create", "Join")
     val icons = listOf(
         Icons.Filled.Public,
         Icons.Filled.Add,
@@ -218,7 +218,7 @@ fun HomeScreen(
             contentAlignment = Alignment.Center
         ) {
             when (selectedIndex) {
-                0 -> PublicScreen(onJoin = onJoin)
+                0 -> RoomsScreen(onJoin = onJoin)
                 1 -> CreateScreen(onJoin = onJoin)
                 2 -> JoinScreen(onJoin = onJoin)
             }

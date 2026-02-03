@@ -117,6 +117,10 @@ object SocketManager {
 
     private var audioPlayer: dev.abu.lisyo.player.AudioPlayer? = null
 
+    // My Created Rooms
+    private val _myRooms = MutableStateFlow<List<String>>(emptyList())
+    val myRooms = _myRooms.asStateFlow()
+
     fun init(context: android.content.Context) {
         if (prefs == null) {
             prefs = context.getSharedPreferences("lisyo_prefs", android.content.Context.MODE_PRIVATE)
@@ -138,6 +142,19 @@ object SocketManager {
                     history.add(RoomHistoryItem(obj.getString("roomId"), obj.getLong("timestamp")))
                 }
                 _joinHistory.value = history
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            // Load my rooms
+            val myRoomsJson = prefs?.getString("my_rooms", "[]") ?: "[]"
+            try {
+                val array = JSONArray(myRoomsJson)
+                val rooms = mutableListOf<String>()
+                for (i in 0 until array.length()) {
+                    rooms.add(array.getString(i))
+                }
+                _myRooms.value = rooms
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -247,6 +264,14 @@ object SocketManager {
                 _repeatMode.value = args[0] as String
             }
         }
+
+        socket.on("room:terminated") {
+            // Room was terminated by host, leave it
+            _playerState.value = _playerState.value.copy(roomId = "")
+            _queue.value = emptyList()
+            _messages.value = emptyList()
+            // We could trigger a navigation back to home here if we had a reference
+        }
         
         socket.on("ntp:pong") { args ->
              if (args.isNotEmpty()) {
@@ -287,10 +312,9 @@ object SocketManager {
 
         val wasPlaying = _playerState.value.isPlaying
         
-        _playerState.value = PlayerState(
+        _playerState.value = _playerState.value.copy(
             currentSong = song,
             isPlaying = isPlaying,
-            isLoading = _playerState.value.isLoading,
             currentPosition = position,
             lastSyncTime = now
         )
@@ -365,6 +389,7 @@ object SocketManager {
         _messages.value = emptyList() // Clear previous room's messages
         _queue.value = emptyList()
         _users.value = emptyList()
+        _playerState.value = _playerState.value.copy(roomId = roomName)
 
         // Update Join History
         val currentHistory = _joinHistory.value.toMutableList()
@@ -397,6 +422,7 @@ object SocketManager {
 
     fun playSong(song: Song) {
         val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
         data.put("id", song.id)
         data.put("title", song.title)
         data.put("artist", song.artist)
@@ -422,7 +448,9 @@ object SocketManager {
             currentPosition = currentPos,
             lastSyncTime = now
         )
-        mSocket?.emit("player:pause")
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        mSocket?.emit("player:pause", data)
         audioPlayer?.pause()
     }
 
@@ -438,22 +466,31 @@ object SocketManager {
             isPlaying = true,
             lastSyncTime = now
         )
-        mSocket?.emit("player:resume")
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        mSocket?.emit("player:resume", data)
         audioPlayer?.resume()
     }
     
     fun next() {
         if (_queue.value.isEmpty()) return
-        mSocket?.emit("player:next")
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        mSocket?.emit("player:next", data)
     }
     
     fun previous() {
         if (_queue.value.isEmpty()) return
-        mSocket?.emit("player:previous")
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        mSocket?.emit("player:previous", data)
     }
     
     fun seekTo(positionMs: Long) {
-        mSocket?.emit("player:seek", positionMs)
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        data.put("position", positionMs)
+        mSocket?.emit("player:seek", data)
         _playerState.value = _playerState.value.copy(
             currentPosition = positionMs,
             lastSyncTime = System.currentTimeMillis()
@@ -464,7 +501,10 @@ object SocketManager {
     fun toggleShuffle() {
         val newValue = !_shuffleEnabled.value
         _shuffleEnabled.value = newValue
-        mSocket?.emit("player:shuffle", newValue)
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        data.put("enabled", newValue)
+        mSocket?.emit("player:shuffle", data)
     }
     
     fun cycleRepeatMode() {
@@ -472,17 +512,24 @@ object SocketManager {
         val currentIndex = modes.indexOf(_repeatMode.value)
         val newMode = modes[(currentIndex + 1) % modes.size]
         _repeatMode.value = newMode
-        mSocket?.emit("player:repeat", newMode)
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        data.put("mode", newMode)
+        mSocket?.emit("player:repeat", data)
     }
     
     fun playFromQueue(index: Int) {
         val queueList = _queue.value
         if (index < 0 || index >= queueList.size) return
-        mSocket?.emit("queue:play", index)
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        data.put("index", index)
+        mSocket?.emit("queue:play", data)
     }
 
     fun sendMessage(text: String, username: String) {
         val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
         data.put("text", text)
         data.put("senderName", username)
         data.put("timestamp", System.currentTimeMillis())
@@ -492,6 +539,7 @@ object SocketManager {
     fun addToQueue(song: Song) {
         if (mSocket?.connected() != true) return
         val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
         data.put("id", song.id)
         data.put("title", song.title)
         data.put("artist", song.artist)
@@ -501,7 +549,10 @@ object SocketManager {
     }
     
     fun removeFromQueue(index: Int) {
-        mSocket?.emit("queue:remove", index)
+        val data = JSONObject()
+        data.put("roomId", _playerState.value.roomId)
+        data.put("index", index)
+        mSocket?.emit("queue:remove", data)
     }
 
     fun updateSongDuration(videoId: String, durationMs: Long) {
@@ -637,13 +688,35 @@ object SocketManager {
     suspend fun createRoom(name: String, vibe: String, isPrivate: Boolean, hostUsername: String, countryFlag: String = "🌐"): String? {
         return try {
             val response = apiService.createRoom(CreateRoomRequest(name, vibe, isPrivate, hostUsername, countryFlag))
-            response.roomId
+            val roomId = response.roomId
+            
+            // Save to my rooms
+            val updated = _myRooms.value.toMutableList()
+            if (!updated.contains(roomId)) {
+                updated.add(0, roomId)
+                _myRooms.value = updated
+                prefs?.edit()?.putString("my_rooms", JSONArray(updated).toString())?.apply()
+            }
+            
+            roomId
         } catch (e: Exception) {
             e.printStackTrace()
             String.format("%06d", (100000..999999).random())
         }
     }
     
+    fun terminateRoom(roomId: String) {
+        val data = JSONObject()
+        data.put("roomId", roomId)
+        mSocket?.emit("room:terminate", data)
+        
+        // Remove from my rooms locally
+        val updated = _myRooms.value.toMutableList()
+        updated.remove(roomId)
+        _myRooms.value = updated
+        prefs?.edit()?.putString("my_rooms", JSONArray(updated).toString())?.apply()
+    }
+
     suspend fun getCountryFlag(): String {
         return try {
             val response = apiService.getLocation()
