@@ -10,8 +10,7 @@ import androidx.annotation.MainThread
 import androidx.collection.ArrayMap
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
-import dev.abu.material3.BuildConfig
-import com.zionhuang.innertube.YouTube
+import dev.abu.material3.innertube.YouTube
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -133,7 +132,7 @@ class PoTokenWebView private constructor(
      */
     @JavascriptInterface
     fun onJsInitializationError(error: String) {
-        if (BuildConfig.DEBUG) {
+        if (true) {
             Log.e(TAG, "Initialization error from JavaScript: $error")
         }
         onInitializationErrorCloseAndCancel(buildExceptionForJsError(error))
@@ -192,7 +191,7 @@ class PoTokenWebView private constructor(
      */
     @JavascriptInterface
     fun onObtainPoTokenError(identifier: String, error: String) {
-        if (BuildConfig.DEBUG) {
+        if (true) {
             Log.e(TAG, "obtainPoToken error from JavaScript: $error")
         }
         popPoTokenContinuation(identifier)?.resumeWithException(buildExceptionForJsError(error))
