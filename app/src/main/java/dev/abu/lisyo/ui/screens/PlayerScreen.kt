@@ -120,12 +120,9 @@ fun PlayerScreen(
         SocketManager.joinRoom(roomId, username)
     }
 
-    // Auto-leave if room is terminated
-    var wasInRoom by remember { mutableStateOf(false) }
+    // Auto-leave if room is terminated or join fails
     LaunchedEffect(playerState.roomId) {
-        if (playerState.roomId.isNotEmpty()) {
-            wasInRoom = true
-        } else if (wasInRoom) {
+        if (playerState.roomId.isEmpty() && roomId.isNotEmpty()) {
             onLeave()
         }
     }

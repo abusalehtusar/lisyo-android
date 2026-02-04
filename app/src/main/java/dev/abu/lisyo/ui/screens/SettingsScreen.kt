@@ -158,32 +158,6 @@ fun SettingsScreen(onBack: () -> Unit, onLoginClick: () -> Unit) {
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
             Text(
-                "Network",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                fontFamily = jetbrainsMono,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
-            )
-
-            ListItem(
-                headlineContent = { 
-                    Text(
-                        "Backend Server", 
-                        fontFamily = inter, 
-                        fontWeight = FontWeight.SemiBold 
-                    ) 
-                },
-                supportingContent = { 
-                    Text(baseUrl, fontFamily = inter) 
-                },
-                leadingContent = {
-                    Icon(Icons.Default.Dns, contentDescription = null)
-                }
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-            Text(
                 "Account",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,

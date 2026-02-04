@@ -229,6 +229,8 @@ object SocketManager {
         socket.on("room:state") { args ->
              if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
+                val serverRoomId = data.optString("id", "")
+                _playerState.value = _playerState.value.copy(roomId = serverRoomId)
                 _shuffleEnabled.value = data.optBoolean("shuffleEnabled", false)
                 _repeatMode.value = data.optString("repeatMode", "off")
                 updatePlayerState(data)
@@ -455,7 +457,7 @@ object SocketManager {
         _messages.value = emptyList() // Clear previous room's messages
         _queue.value = emptyList()
         _users.value = emptyList()
-        _playerState.value = _playerState.value.copy(roomId = roomName)
+        _playerState.value = _playerState.value.copy(roomId = "") // Clear ID, wait for server
 
         // Update Join History
         val currentHistory = _joinHistory.value.toMutableList()
