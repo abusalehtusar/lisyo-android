@@ -248,6 +248,7 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
                         if (username.isNotBlank()) {
                             isLoading = true
                             scope.launch {
+                                SocketManager.establishConnection()
                                 val roomId = SocketManager.createRoom(
                                     name = roomName.ifBlank { "My Room" },
                                     vibe = selectedGenre,
@@ -255,10 +256,11 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
                                     hostUsername = username,
                                     countryFlag = countryFlag
                                 )
-                                isLoading = false
+                                
                                 if (roomId != null) {
-                                    SocketManager.establishConnection()
                                     onJoin(roomId, username)
+                                } else {
+                                    isLoading = false
                                 }
                             }
                         }

@@ -118,8 +118,11 @@ fun PlayerScreen(
     }
 
     // Auto-leave if room is terminated
+    var wasInRoom by remember { mutableStateOf(false) }
     LaunchedEffect(playerState.roomId) {
-        if (playerState.roomId.isEmpty() && roomId.isNotEmpty()) {
+        if (playerState.roomId.isNotEmpty()) {
+            wasInRoom = true
+        } else if (wasInRoom) {
             onLeave()
         }
     }

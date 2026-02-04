@@ -204,7 +204,19 @@ object SocketManager {
         val socket = mSocket ?: return
 
         socket.on(Socket.EVENT_CONNECT) {
+            Logger.logInfo("SocketManager", "Socket connected")
             syncTime()
+            
+            // Re-join room if we have one in state
+            val currentRoomId = _playerState.value.roomId
+            val username = _currentUsername.value
+            if (currentRoomId.isNotEmpty() && username.isNotEmpty()) {
+                Logger.logInfo("SocketManager", "Auto-joining room on connect: $currentRoomId")
+                val data = JSONObject()
+                data.put("room", currentRoomId)
+                data.put("username", username)
+                socket.emit("join:room", data)
+            }
         }
         
         socket.on("room:state") { args ->
@@ -757,7 +769,7 @@ object SocketManager {
             roomId
         } catch (e: Exception) {
             e.printStackTrace()
-            String.format("%06d", (100000..999999).random())
+            null
         }
     }
     
