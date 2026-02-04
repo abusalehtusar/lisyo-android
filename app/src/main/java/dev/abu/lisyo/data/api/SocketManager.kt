@@ -324,6 +324,17 @@ object SocketManager {
                 val message = data.optString("message", "Error joining room")
                 Logger.logError("SocketManager", "Join error: $message")
                 _errorMessage.value = message
+                
+                // If rejoining my own room failed, remove it from my rooms list
+                val currentId = _playerState.value.roomId.ifEmpty { 
+                    // This is tricky because we cleared roomId in joinRoom. 
+                    // We might need to track the 'pending' roomId.
+                    "" 
+                }
+                
+                // Let's just refresh all rooms to be safe
+                refreshRooms()
+
                 // Clear room ID so UI navigates back
                 _playerState.value = _playerState.value.copy(roomId = "")
             }
@@ -725,9 +736,15 @@ object SocketManager {
         scope.launch {
             try {
                 val response = apiService.getMyRooms(username)
-                _myHostedRooms.value = response.mapIndexed { index, item ->
+                val rooms = response.mapIndexed { index, item ->
                     mapRoomResponse(index, item)
                 }
+                _myHostedRooms.value = rooms
+                
+                // Sync the local IDs list with server reality
+                val serverIds = response.map { it.id }
+                _myRooms.value = serverIds
+                prefs?.edit()?.putString("my_rooms", JSONArray(serverIds).toString())?.apply()
             } catch (e: Exception) {
                 e.printStackTrace()
             }

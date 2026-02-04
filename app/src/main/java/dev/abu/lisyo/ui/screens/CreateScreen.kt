@@ -72,6 +72,7 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
     // Generate random room name and get country flag on first load
     LaunchedEffect(Unit) {
         isGenerating = true
+        SocketManager.refreshRooms() // Validate existing rooms
         val (generatedRoom, _) = SocketManager.generateNames()
         roomName = generatedRoom
         countryFlag = SocketManager.getCountryFlag()
