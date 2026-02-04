@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
@@ -39,10 +40,14 @@ import dev.abu.lisyo.ui.theme.jetbrainsMono
 fun SettingsScreen(onBack: () -> Unit, onLoginClick: () -> Unit) {
     val youtubeCookie by SocketManager.youtubeCookie.collectAsState()
     val username by SocketManager.currentUsername.collectAsState()
+    val baseUrl by SocketManager.baseUrl.collectAsState()
     val isLoggedIn = youtubeCookie != null
 
     var showEditUsernameDialog by remember { mutableStateOf(false) }
     var tempUsername by remember { mutableStateOf(username) }
+
+    var showEditBaseUrlDialog by remember { mutableStateOf(false) }
+    var tempBaseUrl by remember { mutableStateOf(baseUrl) }
 
     if (showEditUsernameDialog) {
         AlertDialog(
@@ -78,6 +83,55 @@ fun SettingsScreen(onBack: () -> Unit, onLoginClick: () -> Unit) {
             },
             dismissButton = {
                 TextButton(onClick = { showEditUsernameDialog = false }) {
+                    Text("Cancel", fontFamily = inter)
+                }
+            }
+        )
+    }
+
+    if (showEditBaseUrlDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditBaseUrlDialog = false },
+            title = {
+                Text(
+                    "Backend Server",
+                    fontFamily = jetbrainsMono,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        "Enter your custom backend server URL.",
+                        fontFamily = inter,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    OutlinedTextField(
+                        value = tempBaseUrl,
+                        onValueChange = { tempBaseUrl = it },
+                        label = { Text("Server URL", fontFamily = inter) },
+                        placeholder = { Text("https://your-server.com", fontFamily = inter) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (tempBaseUrl.isNotBlank()) {
+                            SocketManager.setBaseUrl(tempBaseUrl)
+                            showEditBaseUrlDialog = false
+                        }
+                    },
+                    enabled = tempBaseUrl.isNotBlank()
+                ) {
+                    Text("Save", fontFamily = inter)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditBaseUrlDialog = false }) {
                     Text("Cancel", fontFamily = inter)
                 }
             }
@@ -129,6 +183,40 @@ fun SettingsScreen(onBack: () -> Unit, onLoginClick: () -> Unit) {
                     IconButton(onClick = { 
                         tempUsername = username
                         showEditUsernameDialog = true 
+                    }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+            Text(
+                "Network",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontFamily = jetbrainsMono,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+            )
+
+            ListItem(
+                headlineContent = { 
+                    Text(
+                        "Backend Server", 
+                        fontFamily = inter, 
+                        fontWeight = FontWeight.SemiBold 
+                    ) 
+                },
+                supportingContent = { 
+                    Text(baseUrl, fontFamily = inter) 
+                },
+                leadingContent = {
+                    Icon(Icons.Default.Dns, contentDescription = null)
+                },
+                trailingContent = {
+                    IconButton(onClick = { 
+                        tempBaseUrl = baseUrl
+                        showEditBaseUrlDialog = true 
                     }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }

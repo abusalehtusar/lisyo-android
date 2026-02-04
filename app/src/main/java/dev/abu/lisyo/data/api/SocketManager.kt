@@ -28,16 +28,30 @@ object SocketManager {
     private var mSocket: Socket? = null
     private val scope = CoroutineScope(Dispatchers.IO)
     
-    private const val BASE_URL = "https://lisyo-backend-production-1acf.up.railway.app/"
+    private const val DEFAULT_BASE_URL = "https://lisyo-backend-production-1acf.up.railway.app/"
+    private val _baseUrl = MutableStateFlow(DEFAULT_BASE_URL)
+    val baseUrl = _baseUrl.asStateFlow()
     
     // API Services
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+    private var retrofit = Retrofit.Builder()
+        .baseUrl(DEFAULT_BASE_URL)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
-    private val apiService = retrofit.create(LisyoApiService::class.java)
+    private var apiService = retrofit.create(LisyoApiService::class.java)
     
     fun getApiService(): LisyoApiService = apiService
+
+    private fun rebuildApiService(newUrl: String) {
+        try {
+            retrofit = Retrofit.Builder()
+                .baseUrl(if (newUrl.endsWith("/")) newUrl else "$newUrl/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+            apiService = retrofit.create(LisyoApiService::class.java)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     // State Flows
     private val _playerState = MutableStateFlow(PlayerState())
@@ -106,7 +120,7 @@ object SocketManager {
                 val opts = IO.Options()
                 opts.forceNew = true
                 opts.reconnection = true
-                mSocket = IO.socket(BASE_URL, opts)
+                mSocket = IO.socket(_baseUrl.value, opts)
                 initListeners()
             } catch (e: URISyntaxException) {
                 e.printStackTrace()
@@ -124,6 +138,12 @@ object SocketManager {
     fun init(context: android.content.Context) {
         if (prefs == null) {
             prefs = context.getSharedPreferences("lisyo_prefs", android.content.Context.MODE_PRIVATE)
+            
+            // Load custom base URL
+            val savedUrl = prefs?.getString("base_url", DEFAULT_BASE_URL) ?: DEFAULT_BASE_URL
+            _baseUrl.value = savedUrl
+            rebuildApiService(savedUrl)
+
             val cookie = prefs?.getString("yt_cookie", null)
             _youtubeCookie.value = cookie
             dev.abu.lisyo.innertube.YouTube.cookie = cookie
@@ -381,6 +401,18 @@ object SocketManager {
     fun setUsername(username: String) {
         _currentUsername.value = username
         prefs?.edit()?.putString("username", username)?.apply()
+    }
+
+    fun setBaseUrl(newUrl: String) {
+        val sanitized = if (newUrl.endsWith("/")) newUrl else "$newUrl/"
+        _baseUrl.value = sanitized
+        prefs?.edit()?.putString("base_url", sanitized)?.apply()
+        rebuildApiService(sanitized)
+        
+        // Reset socket
+        mSocket?.disconnect()
+        mSocket = null
+        establishConnection()
     }
 
     // Actions
