@@ -115,6 +115,8 @@ fun PlayerScreen(
     val tabs = listOf("Songs", "Chat", "Session")
     val icons = listOf(Icons.Default.MusicNote, Icons.Default.Chat, Icons.Default.Group)
 
+    var hasJoined by remember { mutableStateOf(false) }
+
     LaunchedEffect(roomId, username) {
         SocketManager.establishConnection()
         SocketManager.joinRoom(roomId, username)
@@ -122,7 +124,9 @@ fun PlayerScreen(
 
     // Auto-leave if room is terminated or join fails
     LaunchedEffect(playerState.roomId) {
-        if (playerState.roomId.isEmpty() && roomId.isNotEmpty()) {
+        if (playerState.roomId == roomId) {
+            hasJoined = true
+        } else if (hasJoined && playerState.roomId.isEmpty()) {
             onLeave()
         }
     }

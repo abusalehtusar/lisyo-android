@@ -55,6 +55,10 @@ fun JoinScreen(onJoin: (String, String) -> Unit) {
     val historyItems by SocketManager.joinHistory.collectAsState()
     var roomCode by remember { mutableStateOf("") }
     var isJoining by remember { mutableStateOf(false) }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        isJoining = false
+    }
     
     Column(
         modifier = Modifier
