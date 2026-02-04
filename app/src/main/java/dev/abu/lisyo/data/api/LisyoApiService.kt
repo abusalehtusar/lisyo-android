@@ -12,6 +12,9 @@ interface LisyoApiService {
 
     @GET("api/rooms")
     suspend fun getRooms(): List<RoomResponse>
+
+    @GET("api/my-rooms/{username}")
+    suspend fun getMyRooms(@Path("username") username: String): List<RoomResponse>
     
     @GET("api/stream/{videoId}")
     suspend fun getStreamUrl(@Path("videoId") videoId: String): StreamResponse

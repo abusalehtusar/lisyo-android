@@ -68,6 +68,10 @@ object SocketManager {
     private val _publicRooms = MutableStateFlow<List<Room>>(emptyList())
     val publicRooms = _publicRooms.asStateFlow()
 
+    // My Hosted Rooms (fetched from backend)
+    private val _myHostedRooms = MutableStateFlow<List<Room>>(emptyList())
+    val myHostedRooms = _myHostedRooms.asStateFlow()
+
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages = _messages.asStateFlow()
 
@@ -668,36 +672,56 @@ object SocketManager {
             _isLoadingRooms.value = true
             try {
                 val response = apiService.getRooms()
-                Logger.logInfo("SocketManager", "Fetched ${response.size} rooms")
-                val rooms = response.mapIndexed { index, item ->
-                    val queueSongs = mutableListOf<String>()
-                    item.currentSong?.let { 
-                        queueSongs.add("${it.title} - ${it.artist}")
-                    }
-                    item.queuePreview?.forEach { song ->
-                        queueSongs.add("${song.title} - ${song.artist}")
-                    }
-                    Logger.logInfo("SocketManager", "Room ${item.id}: songs=${queueSongs.size}, total=${item.totalSongs}")
-                    Room(
-                        id = index,
-                        roomId = item.id,
-                        countryFlag = item.countryFlag,
-                        vibe = item.vibe,
-                        username = "Host",
-                        roomName = item.name,
-                        songs = queueSongs.take(5), // Show exactly 5 songs in preview
-                        totalSongs = item.totalSongs,
-                        userCount = item.userCount,
-                        flagColor = getVibeColor(item.vibe)
-                    )
+                _publicRooms.value = response.mapIndexed { index, item -> 
+                    mapRoomResponse(index, item) 
                 }
-                _publicRooms.value = rooms
+                
+                // Also refresh my hosted rooms if username is available
+                val username = _currentUsername.value
+                if (username.isNotBlank()) {
+                    refreshMyRooms(username)
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
                 _isLoadingRooms.value = false
             }
         }
+    }
+
+    private fun refreshMyRooms(username: String) {
+        scope.launch {
+            try {
+                val response = apiService.getMyRooms(username)
+                _myHostedRooms.value = response.mapIndexed { index, item ->
+                    mapRoomResponse(index, item)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun mapRoomResponse(index: Int, item: RoomResponse): Room {
+        val queueSongs = mutableListOf<String>()
+        item.currentSong?.let { 
+            queueSongs.add("${it.title} - ${it.artist}")
+        }
+        item.queuePreview?.forEach { song ->
+            queueSongs.add("${song.title} - ${song.artist}")
+        }
+        return Room(
+            id = index,
+            roomId = item.id,
+            countryFlag = item.countryFlag,
+            vibe = item.vibe,
+            username = "Host",
+            roomName = item.name,
+            songs = queueSongs.take(5),
+            totalSongs = item.totalSongs,
+            userCount = item.userCount,
+            flagColor = getVibeColor(item.vibe)
+        )
     }
     
     suspend fun generateNames(): Pair<String, String> {

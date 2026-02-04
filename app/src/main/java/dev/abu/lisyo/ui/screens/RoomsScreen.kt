@@ -67,15 +67,15 @@ import kotlinx.coroutines.launch
 @Composable
 fun RoomsScreen(onJoin: (String, String) -> Unit) {
     val publicRooms by SocketManager.publicRooms.collectAsState()
-    val myRoomIds by SocketManager.myRooms.collectAsState()
+    val myHostedRooms by SocketManager.myHostedRooms.collectAsState()
     val username by SocketManager.currentUsername.collectAsState()
     val isLoading by SocketManager.isLoadingRooms.collectAsState()
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val pullToRefreshState = rememberPullToRefreshState()
     
-    val myRooms = publicRooms.filter { myRoomIds.contains(it.roomId) }
-    val otherRooms = publicRooms.filter { !myRoomIds.contains(it.roomId) }
+    val myRooms = myHostedRooms
+    val otherRooms = publicRooms.filter { pub -> myHostedRooms.none { my -> my.roomId == pub.roomId } }
 
     LaunchedEffect(Unit) {
         SocketManager.refreshRooms()
