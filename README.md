@@ -4,11 +4,13 @@
 # Lisyo
 ### Synchronized Music Listening for Android
 
-<a href="https://developer.android.com/android"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Android/Android.svg"></a>
-<a href="https://kotlinlang.org/"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Kotlin/Kotlin.svg"></a>
-<a href="https://nodejs.org/"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/NodeJS/NodeJS.svg"></a>
-<a href="https://expressjs.com/"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Express/Express.svg"></a>
-<a href="https://socket.io/"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/SocketIO/SocketIO.svg"></a>
+<p align="center">
+    <a href="https://developer.android.com/android"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Android/Android.svg"></a>
+    <a href="https://kotlinlang.org/"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Kotlin/Kotlin.svg"></a>
+    <a href="https://nodejs.org/"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/NodeJS/NodeJS.svg"></a>
+    <a href="https://expressjs.com/"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Express/Express.svg"></a>
+    <a href="https://socket.io/"><img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/SocketIO/SocketIO.svg"></a>
+</p>
 
 Lisyo is a real-time synchronized music listening application for Android, allowing users to listen to music together in public or private rooms.
 
