@@ -108,6 +108,7 @@ fun PlayerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     
     BackHandler {
+        SocketManager.leaveRoom()
         onLeave()
     }
     
@@ -147,7 +148,10 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onLeave) {
+                    IconButton(onClick = {
+                        SocketManager.leaveRoom()
+                        onLeave()
+                    }) {
                         Icon(Icons.Default.KeyboardArrowDown, "Leave")
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {

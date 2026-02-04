@@ -132,10 +132,8 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
                     Spacer(Modifier.height(24.dp))
                     Button(
                         onClick = { 
-                             scope.launch {
-                                 SocketManager.establishConnection()
-                                 onJoin(existingRoomId, username)
-                             }
+                             SocketManager.establishConnection()
+                             onJoin(existingRoomId, username)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
@@ -324,6 +322,7 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
                                     
                                     if (roomId != null) {
                                         onJoin(roomId, username)
+                                        isLoading = false
                                     } else {
                                         isLoading = false
                                     }

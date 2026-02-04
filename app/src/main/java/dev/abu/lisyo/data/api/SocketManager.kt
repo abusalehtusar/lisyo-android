@@ -500,6 +500,29 @@ object SocketManager {
         mSocket?.emit("join:room", data)
     }
 
+    fun leaveRoom() {
+        val currentRoomId = _playerState.value.roomId
+        if (currentRoomId.isNotEmpty()) {
+            val data = JSONObject()
+            data.put("room", currentRoomId)
+            data.put("username", _currentUsername.value)
+            mSocket?.emit("leave:room", data)
+        }
+        
+        // Clear local state
+        _playerState.value = PlayerState()
+        _queue.value = emptyList()
+        _messages.value = emptyList()
+        _users.value = emptyList()
+        currentVideoId = null
+        
+        scope.launch {
+            withContext(Dispatchers.Main) {
+                audioPlayer?.pause()
+            }
+        }
+    }
+
     fun playSong(song: Song) {
         val data = JSONObject()
         data.put("roomId", _playerState.value.roomId)

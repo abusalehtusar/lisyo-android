@@ -142,6 +142,8 @@ fun JoinScreen(onJoin: (String, String) -> Unit) {
                             isJoining = true
                             SocketManager.establishConnection()
                             onJoin(roomCode, username)
+                            // Reset state in case they come back
+                            isJoining = false
                         }
                     },
                     enabled = roomCode.length == 6 && username.isNotBlank() && !isJoining,
