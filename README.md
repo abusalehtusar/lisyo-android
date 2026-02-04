@@ -2,7 +2,7 @@
 <img src="Web/logo.svg" width="128" height="128" style="border-radius: 20%">
 
 # Lisyo
-### 🎵 Sync your rhythm, listen together.
+### 🎵 Perfectly synced music rooms.
 
 Lisyo is a real-time synchronized music listening application for Android, allowing users to listen to music together in public or private rooms.
 
@@ -22,10 +22,10 @@ Lisyo is a real-time synchronized music listening application for Android, allow
 
 <p align="center">
   <a href="https://github.com/abusalehtusar/lisyo-android/releases/download/v1.0.1b/Lisyo-1.0.1b-release.apk">
-    <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Android/android2.svg" height="40">
+    <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Github/github2.svg" height="45">
   </a>
   <br>
-  <b>Download Latest Release (v1.0.1b)</b>
+  <b>Get Latest Release (v1.0.1b)</b>
 </p>
 
 ---
