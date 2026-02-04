@@ -1,5 +1,6 @@
 package dev.abu.lisyo.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,8 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -34,12 +37,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import dev.abu.lisyo.data.api.SocketManager
 import dev.abu.lisyo.ui.screens.CreateScreen
 import dev.abu.lisyo.ui.screens.JoinScreen
 import dev.abu.lisyo.ui.screens.LoginScreen
@@ -61,6 +66,15 @@ sealed class Screen(val route: String) {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val errorMessage by SocketManager.errorMessage.collectAsState()
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            SocketManager.clearError()
+        }
+    }
     
     NavHost(navController = navController, startDestination = Screen.Home.route) {
         composable(Screen.Home.route) {

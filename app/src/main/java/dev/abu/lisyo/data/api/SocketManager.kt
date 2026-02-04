@@ -95,6 +95,13 @@ object SocketManager {
     // Current username
     private var _currentUsername = MutableStateFlow("")
     val currentUsername = _currentUsername.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage = _errorMessage.asStateFlow()
+
+    fun clearError() {
+        _errorMessage.value = null
+    }
     
     // Join History
     private val _joinHistory = MutableStateFlow<List<RoomHistoryItem>>(emptyList())
@@ -314,6 +321,7 @@ object SocketManager {
                 val data = args[0] as JSONObject
                 val message = data.optString("message", "Error joining room")
                 Logger.logError("SocketManager", "Join error: $message")
+                _errorMessage.value = message
                 // Clear room ID so UI navigates back
                 _playerState.value = _playerState.value.copy(roomId = "")
             }
