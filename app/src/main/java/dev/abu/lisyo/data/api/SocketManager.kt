@@ -321,7 +321,8 @@ object SocketManager {
         socket.on("room:error") { args ->
             if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
-                val message = data.optString("message", "Error joining room")
+                val rawMessage = data.optString("message", "Error joining room")
+                val message = if (rawMessage == "Room not found") "Room not found, Leave!" else rawMessage
                 Logger.logError("SocketManager", "Join error: $message")
                 _errorMessage.value = message
                 
