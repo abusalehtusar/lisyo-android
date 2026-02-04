@@ -112,10 +112,9 @@ fun RoomsScreen(onJoin: (String, String) -> Unit) {
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(
-                    top = 8.dp,
+                    top = 4.dp,
                     bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 ),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 // My Rooms Section
@@ -127,7 +126,7 @@ fun RoomsScreen(onJoin: (String, String) -> Unit) {
                             fontFamily = jetbrainsMono,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp)
                         )
                     }
                     items(myRooms) { room ->
@@ -142,6 +141,7 @@ fun RoomsScreen(onJoin: (String, String) -> Unit) {
                                 SocketManager.terminateRoom(roomId)
                             }
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
 
@@ -154,7 +154,7 @@ fun RoomsScreen(onJoin: (String, String) -> Unit) {
                             fontFamily = jetbrainsMono,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 2.dp)
                         )
                     }
                     items(otherRooms) { room ->
@@ -166,6 +166,7 @@ fun RoomsScreen(onJoin: (String, String) -> Unit) {
                                 onJoin(roomId, username)
                             }
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
                 
