@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -85,6 +86,9 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
         }
     }
 
+    val myRooms by SocketManager.myRooms.collectAsState()
+    val existingRoomId = myRooms.firstOrNull()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -92,204 +96,262 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp)
+        if (existingRoomId != null) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Header with country flag
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = countryFlag,
-                        fontSize = 28.sp
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MusicNote,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "Host a Session",
+                        text = "You have an active room",
                         fontFamily = jetbrainsMono,
-                        fontWeight = FontWeight.SemiBold,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
+                    Text(
+                        text = "Room ID: $existingRoomId",
+                        fontFamily = inter,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    Button(
+                        onClick = { 
+                             scope.launch {
+                                 SocketManager.establishConnection()
+                                 onJoin(existingRoomId, username)
+                             }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text("Rejoin Session", fontFamily = inter, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    androidx.compose.material3.TextButton(
+                        onClick = { SocketManager.terminateRoom(existingRoomId) },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("End Session", fontFamily = inter)
+                    }
                 }
+            }
+        } else {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    // Header with country flag
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = countryFlag,
+                            fontSize = 28.sp
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Host a Session",
+                            fontFamily = jetbrainsMono,
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
 
-                Spacer(modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.size(24.dp))
 
-                // Room Name Input
-                Text(
-                    text = "Room Details",
-                    fontFamily = jetbrainsMono,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                OutlinedTextField(
-                    value = roomName,
-                    onValueChange = { roomName = it },
-                    label = { Text("Room Name", fontFamily = inter) },
-                    placeholder = { Text("e.g. Neon Vibes", fontFamily = inter) },
-                    leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                    trailingIcon = {
-                        if (isGenerating) {
+                    // Room Name Input
+                    Text(
+                        text = "Room Details",
+                        fontFamily = jetbrainsMono,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    OutlinedTextField(
+                        value = roomName,
+                        onValueChange = { roomName = it },
+                        label = { Text("Room Name", fontFamily = inter) },
+                        placeholder = { Text("e.g. Neon Vibes", fontFamily = inter) },
+                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                        trailingIcon = {
+                            if (isGenerating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                IconButton(onClick = { regenerateRoomName() }) {
+                                    Icon(Icons.Default.Refresh, contentDescription = "Randomize")
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.size(24.dp))
+
+                    // Vibe / Genre Selection
+                    Text(
+                        text = "Select Vibe",
+                        fontFamily = jetbrainsMono,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(genres) { genre ->
+                            val isSelected = genre == selectedGenre
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { selectedGenre = genre },
+                                label = { 
+                                    Text(
+                                        text = genre, 
+                                        fontFamily = inter,
+                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                                    ) 
+                                },
+                                leadingIcon = if (isSelected) {
+                                    { Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                } else null,
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.size(24.dp))
+
+                    // Privacy Settings
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (isPrivate) Icons.Default.Lock else Icons.Default.Public,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = if (isPrivate) "Private Room" else "Public Room",
+                                    fontFamily = jetbrainsMono,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (isPrivate) "Invite only" else "Anyone can join",
+                                    fontFamily = inter,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        
+                        Switch(
+                            checked = isPrivate,
+                            onCheckedChange = { isPrivate = it },
+                            thumbContent = if (isPrivate) {
+                                { Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                            } else null,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.size(32.dp))
+
+                    // Action Button
+                    Button(
+                        onClick = { 
+                            if (username.isNotBlank()) {
+                                isLoading = true
+                                scope.launch {
+                                    SocketManager.establishConnection()
+                                    val roomId = SocketManager.createRoom(
+                                        name = roomName.ifBlank { "My Room" },
+                                        vibe = selectedGenre,
+                                        isPrivate = isPrivate,
+                                        hostUsername = username,
+                                        countryFlag = countryFlag
+                                    )
+                                    
+                                    if (roomId != null) {
+                                        onJoin(roomId, username)
+                                    } else {
+                                        isLoading = false
+                                    }
+                                }
+                            }
+                        },
+                        enabled = username.isNotBlank() && !isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        if (isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            IconButton(onClick = { regenerateRoomName() }) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Randomize")
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    )
-                )
-
-                Spacer(modifier = Modifier.size(24.dp))
-
-                // Vibe / Genre Selection
-                Text(
-                    text = "Select Vibe",
-                    fontFamily = jetbrainsMono,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(genres) { genre ->
-                        val isSelected = genre == selectedGenre
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { selectedGenre = genre },
-                            label = { 
-                                Text(
-                                    text = genre, 
-                                    fontFamily = inter,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-                                ) 
-                            },
-                            leadingIcon = if (isSelected) {
-                                { Icon(Icons.Default.MusicNote, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                            } else null,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
                             )
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.size(24.dp))
-
-                // Privacy Settings
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (isPrivate) Icons.Default.Lock else Icons.Default.Public,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (isPrivate) "Private Room" else "Public Room",
-                                fontFamily = jetbrainsMono,
-                                fontWeight = FontWeight.SemiBold,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = if (isPrivate) "Invite only" else "Anyone can join",
+                                text = "Start Listening",
                                 fontFamily = inter,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp
                             )
                         }
-                    }
-                    
-                    Switch(
-                        checked = isPrivate,
-                        onCheckedChange = { isPrivate = it },
-                        thumbContent = if (isPrivate) {
-                            { Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(12.dp)) }
-                        } else null,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.size(32.dp))
-
-                // Action Button
-                Button(
-                    onClick = { 
-                        if (username.isNotBlank()) {
-                            isLoading = true
-                            scope.launch {
-                                SocketManager.establishConnection()
-                                val roomId = SocketManager.createRoom(
-                                    name = roomName.ifBlank { "My Room" },
-                                    vibe = selectedGenre,
-                                    isPrivate = isPrivate,
-                                    hostUsername = username,
-                                    countryFlag = countryFlag
-                                )
-                                
-                                if (roomId != null) {
-                                    onJoin(roomId, username)
-                                } else {
-                                    isLoading = false
-                                }
-                            }
-                        }
-                    },
-                    enabled = username.isNotBlank() && !isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(50)
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Start Listening",
-                            fontFamily = inter,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
                     }
                 }
             }

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MusicNote
@@ -41,6 +42,8 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -669,6 +672,8 @@ fun ChatBubble(message: ChatMessage, isMe: Boolean) {
 @Composable
 fun SessionTab(users: List<dev.abu.lisyo.data.model.SessionUser>, roomId: String) {
     val clipboardManager = LocalClipboardManager.current
+    val currentUser = users.find { it.username == SocketManager.currentUsername.value }
+    val isHost = currentUser?.isHost == true
     
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Room Info Card
@@ -697,6 +702,18 @@ fun SessionTab(users: List<dev.abu.lisyo.data.model.SessionUser>, roomId: String
                 }) {
                     Icon(Icons.Default.ContentCopy, "Copy ID", tint = MaterialTheme.colorScheme.onTertiaryContainer)
                 }
+            }
+        }
+
+        if (isHost) {
+            Button(
+                onClick = { SocketManager.terminateRoom(roomId) },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Terminate Room", fontFamily = inter, fontWeight = FontWeight.SemiBold)
             }
         }
         

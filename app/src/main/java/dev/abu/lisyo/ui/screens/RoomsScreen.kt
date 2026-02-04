@@ -127,7 +127,7 @@ fun RoomsScreen(onJoin: (String, String) -> Unit) {
                             fontFamily = jetbrainsMono,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
                         )
                     }
                     items(myRooms) { room ->
@@ -154,7 +154,7 @@ fun RoomsScreen(onJoin: (String, String) -> Unit) {
                             fontFamily = jetbrainsMono,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
                         )
                     }
                     items(otherRooms) { room ->
@@ -415,27 +415,7 @@ fun RoomCard(
                     )
                 }
 
-                if (isOwner) {
-                    Spacer(modifier = Modifier.width(12.dp))
-                    OutlinedButton(
-                        onClick = { onTerminate(room.roomId) },
-                        shape = RoundedCornerShape(50),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(ButtonDefaults.MinHeight)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(text = "Terminate", fontFamily = inter, fontWeight = FontWeight.SemiBold)
-                    }
-                } else {
+                if (!isOwner) {
                     Spacer(modifier = Modifier.width(12.dp))
                     FilledIconButton(
                         onClick = { /* Report action */ },
