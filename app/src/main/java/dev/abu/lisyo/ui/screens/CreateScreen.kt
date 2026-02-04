@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.abu.lisyo.data.api.SocketManager
@@ -143,13 +144,15 @@ fun CreateScreen(onJoin: (String, String) -> Unit) {
                     ) {
                         Text("Rejoin Session", fontFamily = inter, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(Modifier.height(8.dp))
-                    androidx.compose.material3.TextButton(
-                        onClick = { SocketManager.terminateRoom(existingRoomId) },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("End Session", fontFamily = inter)
-                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "To create a new room, you must first rejoin and terminate your active session from the session tab.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
+                        fontFamily = inter,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                 }
             }
         } else {

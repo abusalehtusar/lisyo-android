@@ -308,6 +308,16 @@ object SocketManager {
             _messages.value = emptyList()
             // We could trigger a navigation back to home here if we had a reference
         }
+
+        socket.on("room:error") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                val message = data.optString("message", "Error joining room")
+                Logger.logError("SocketManager", "Join error: $message")
+                // Clear room ID so UI navigates back
+                _playerState.value = _playerState.value.copy(roomId = "")
+            }
+        }
         
         socket.on("ntp:pong") { args ->
              if (args.isNotEmpty()) {
