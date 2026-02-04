@@ -226,6 +226,14 @@ object SocketManager {
             }
         }
         
+        socket.on("join:success") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                val serverRoomId = data.optString("roomId", "")
+                _playerState.value = _playerState.value.copy(roomId = serverRoomId)
+            }
+        }
+
         socket.on("room:state") { args ->
              if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
@@ -465,11 +473,16 @@ object SocketManager {
 
     // Actions
     fun joinRoom(roomName: String, username: String) {
+        val isSameRoom = _playerState.value.roomId == roomName && _currentUsername.value == username
+        
         _currentUsername.value = username
-        _messages.value = emptyList() // Clear previous room's messages
-        _queue.value = emptyList()
-        _users.value = emptyList()
-        _playerState.value = _playerState.value.copy(roomId = "") // Clear ID, wait for server
+        
+        if (!isSameRoom) {
+            _messages.value = emptyList() // Clear previous room's messages
+            _queue.value = emptyList()
+            _users.value = emptyList()
+            _playerState.value = _playerState.value.copy(roomId = roomName) // Set ID immediately
+        }
 
         // Update Join History
         val currentHistory = _joinHistory.value.toMutableList()

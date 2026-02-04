@@ -108,7 +108,6 @@ fun PlayerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     
     BackHandler {
-        SocketManager.leaveRoom()
         onLeave()
     }
     
@@ -119,6 +118,7 @@ fun PlayerScreen(
     var hasJoined by remember { mutableStateOf(false) }
 
     LaunchedEffect(roomId, username) {
+        hasJoined = false // Reset join state for new parameters
         SocketManager.establishConnection()
         SocketManager.joinRoom(roomId, username)
     }
@@ -127,7 +127,8 @@ fun PlayerScreen(
     LaunchedEffect(playerState.roomId) {
         if (playerState.roomId == roomId) {
             hasJoined = true
-        } else if (hasJoined && playerState.roomId.isEmpty()) {
+        } else if (hasJoined && playerState.roomId.isEmpty() && roomId.isNotEmpty()) {
+            // Only leave if we WERE in a room and now the global roomId is explicitly empty
             onLeave()
         }
     }
@@ -148,10 +149,7 @@ fun PlayerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = {
-                        SocketManager.leaveRoom()
-                        onLeave()
-                    }) {
+                    IconButton(onClick = onLeave) {
                         Icon(Icons.Default.KeyboardArrowDown, "Leave")
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
