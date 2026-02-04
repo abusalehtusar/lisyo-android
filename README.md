@@ -25,6 +25,8 @@ Lisyo is a real-time synchronized music listening application for Android, allow
 Lisyo uses a **Hybrid Client-Server Architecture** to ensure low-latency synchronization while leveraging the vast library of YouTube Music.
 
 ### 1. Backend (The Conductor)
+<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/NodeJS/nodejs2.svg" height="25"> <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Express/express2.svg" height="25"> <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/SocketIO/socketio2.svg" height="25">
+
 The backend is a lightweight Node.js/Express server responsible for **State & Synchronization**.
 *   **Room Management:** Handles creating, joining, and listing rooms.
 *   **Session Management:** Tracks connected users and hosts.
@@ -32,6 +34,8 @@ The backend is a lightweight Node.js/Express server responsible for **State & Sy
 *   **Shared State:** Manages the Song Queue and Chat messages.
 
 ### 2. Android Client (The Player)
+<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Android/android2.svg" height="25"> <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Kotlin/kotlin2.svg" height="25">
+
 The client is a native Android app built with Jetpack Compose.
 *   **Audio Engine:** Uses **ExoPlayer** for high-quality playback.
 *   **Stream Extraction:** Directly interacts with **YouTube's InnerTube API** to extract audio stream URLs on the device.
@@ -52,16 +56,16 @@ The client is a native Android app built with Jetpack Compose.
 ## 🛠️ Tech Stack
 
 ### Mobile (Android)
-*   **Language:** Kotlin
+*   **Language:** Kotlin <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Kotlin/kotlin2.svg" height="20">
 *   **UI:** Jetpack Compose
 *   **Playback:** Media3 (ExoPlayer)
 *   **Networking:** Retrofit, Ktor, Socket.IO Client
 *   **Extraction:** NewPipeExtractor (InnerTube)
 
 ### Backend
-*   **Runtime:** Node.js
-*   **Framework:** Express
-*   **Real-time:** Socket.IO
+*   **Runtime:** Node.js <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/NodeJS/nodejs2.svg" height="20">
+*   **Framework:** Express <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Express/express2.svg" height="20">
+*   **Real-time:** Socket.IO <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/SocketIO/socketio2.svg" height="20">
 *   **Metadata:** YouTube-Music-API
 
 ---
