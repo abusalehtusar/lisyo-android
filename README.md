@@ -22,10 +22,10 @@ Lisyo is a real-time synchronized music listening application for Android, allow
 
 <p align="center">
   <a href="https://github.com/abusalehtusar/lisyo-android/releases/download/v1.0.1b/Lisyo-1.0.1b-release.apk">
-    <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Github/github2.svg" height="45">
+    <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Github/github3.svg" height="45">
   </a>
   <br>
-  <b>Get Latest Release (v1.0.1b)</b>
+  <b>Click here to Download...</b>
 </p>
 
 ---
