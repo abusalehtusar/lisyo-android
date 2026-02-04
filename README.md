@@ -1,5 +1,5 @@
 <div align="center">
-<img src="art/logo.svg" width="128" height="128" style="border-radius: 20%">
+<img src="Web/logo.svg" width="128" height="128" style="border-radius: 20%">
 
 # Lisyo
 ### Synchronized Music Listening for Android
