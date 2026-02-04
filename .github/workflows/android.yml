@@ -3,7 +3,7 @@
 name: Dev Build
 
 on:
-  push:
+  # push:
   workflow_dispatch:
 
 jobs:

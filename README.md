@@ -20,6 +20,16 @@ Lisyo is a real-time synchronized music listening application for Android, allow
 
 ---
 
+<p align="center">
+  <a href="https://github.com/abusalehtusar/lisyo-android/releases/download/v1.0.1b/Lisyo-1.0.1b-release.apk">
+    <img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Android/android2.svg" height="40">
+  </a>
+  <br>
+  <b>Download Latest Release (v1.0.1b)</b>
+</p>
+
+---
+
 ## 🏗️ Architecture
 
 Lisyo uses a **Hybrid Client-Server Architecture** to ensure low-latency synchronization while leveraging the vast library of YouTube Music.
